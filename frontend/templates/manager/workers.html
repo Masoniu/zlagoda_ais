@@ -18,7 +18,405 @@
     />
     <link rel="stylesheet" href="../../static/css/style.css" />
   </head>
-  <body>
+  <body class="manager_layout">
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand brand_logo fw-bold fs-4" href="home.html"
+          >ZLAGODA</a
+        >
+        <button
+          class="navbar-toggler border-white"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div
+          class="collapse navbar-collapse justify-content-center"
+          id="navbarNav"
+        >
+          <ul class="navbar-nav gap-3">
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="produce.html"
+                >Товари</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="prod_group.html"
+                >Категорії</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="workers.html"
+                >Працівники</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <span
+            class="navbar-text text-white me-3 d-none d-sm-inline"
+            id="userNameDisplay"
+          ></span>
+          <button class="btn btn_nav btn-sm fw-bold px-3 py-2" id="logoutBtn">
+            Вийти
+          </button>
+        </div>
+      </div>
+    </nav>
+    <main class="container mt-5">
+      <h2 class="mb-4 fw-bold">Персонал магазину</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="input-group search-container">
+          <span class="input-group-text bg-white border-0 ps-3">
+            <i class="bi bi-search icon-zlagoda"></i>
+          </span>
+          <input
+            type="text"
+            id="employeeSearch"
+            class="form-control border-0 shadow-none ps-2"
+            placeholder="Пошук за прізвищем"
+          />
+        </div>
+        <button
+          class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
+          data-bs-toggle="modal"
+          data-bs-target="#addEmployeeModal"
+        >
+          + Додати працівника
+        </button>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4 mt-5">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead class="zlagoda_table_header">
+              <tr>
+                <th class="ps-4">ID</th>
+                <th>ПІБ</th>
+                <th>Посада</th>
+                <th>Телефон</th>
+                <th>Зарплата</th>
+                <th class="text-end pe-4">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="employeeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <div
+      class="modal fade"
+      id="addEmployeeModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">Картка працівника</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <form id="addEmployeeForm">
+              <input type="hidden" id="editEmployeeId" />
+              <input type="hidden" id="emplRoleInput" value="Касир" />
+              <div class="mb-4">
+                <label class="form-label d-block mb-3 fw-bold text-center"
+                  >Оберіть посаду</label
+                >
+                <div class="row g-2 justify-content-center">
+                  <div class="col-6 col-sm-4">
+                    <button
+                      type="button"
+                      class="btn btn-role-select active w-100 py-3"
+                      data-role="Касир"
+                    >
+                      <i class="bi bi-person fs-3"></i>
+                      <div class="fw-bold">Касир</div>
+                    </button>
+                  </div>
+                  <div class="col-6 col-sm-4">
+                    <button
+                      type="button"
+                      class="btn btn-role-select w-100 py-3"
+                      data-role="Менеджер"
+                    >
+                      <i class="bi bi-person-badge fs-3"></i>
+                      <div class="fw-bold">Менеджер</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Прізвище*</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="emplSurnameInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Ім'я*</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="emplNameInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">По батькові</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="emplPatronymicInput"
+                  />
+                </div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold"
+                    >Дата народження*</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control auth-input"
+                    id="emplBirthInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold"
+                    >Початок роботи*</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control auth-input"
+                    id="emplStartInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold"
+                    >Контактний тел.*</label
+                  >
+                  <input
+                    type="tel"
+                    class="form-control auth-input"
+                    id="emplPhoneInput"
+                    placeholder="+380..."
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold"
+                    >Зарплата (грн)*</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control auth-input"
+                    id="emplSalaryInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold"
+                    >Пароль для входу*</label
+                  >
+                  <div class="position-relative">
+                    <input
+                      type="password"
+                      class="form-control auth-input pe-5"
+                      id="emplPasswordInput"
+                      placeholder="Введіть пароль"
+                      required
+                    />
+                    <i
+                      class="bi bi-eye icon-zlagoda password-toggle-icon"
+                      onclick="togglePasswordVisibility()"
+                    ></i>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Місто*</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="emplCityInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold"
+                    >Вулиця та Індекс*</label
+                  >
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control auth-input w-75"
+                      id="emplStreetInput"
+                      placeholder="вул..."
+                      required
+                    />
+                    <input
+                      type="text"
+                      class="form-control auth-input w-25"
+                      id="emplZipInput"
+                      placeholder="00000"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-end border-top pt-3">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                  Зберегти працівника
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="viewEmployeeModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+          <div class="modal-header border-0 rounded-top-4" id="v-header">
+            <h5 class="modal-title fw-bold">Досьє працівника</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="text-center mb-4">
+              <div class="display-1 text-muted">
+                <i class="bi bi-person-vcard icon-zlagoda"></i>
+              </div>
+              <div id="v-id" class="text-muted small mb-2"></div>
+              <h4 id="v-fullName" class="fw-bold mb-1"></h4>
+              <span id="v-role" class="badge-empl"></span>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-6">
+                <p class="small text-muted mb-0">Телефон</p>
+                <p id="v-phone" class="fw-semibold"></p>
+              </div>
+              <div class="col-6">
+                <p class="small text-muted mb-0">Зарплата</p>
+                <p id="v-salary" class="fw-semibold"></p>
+              </div>
+              <div class="col-6">
+                <p class="small text-muted mb-0">Дата народження</p>
+                <p id="v-birth" class="fw-semibold"></p>
+              </div>
+              <div class="col-6">
+                <p class="small text-muted mb-0">Працює з</p>
+                <p id="v-start" class="fw-semibold"></p>
+              </div>
+              <div class="col-12 border-top pt-2">
+                <p class="small text-muted mb-0">Адреса</p>
+                <p id="v-address" class="fw-semibold"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="deleteConfirmModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-body text-center p-4">
+            <div class="mb-3">
+              <i class="bi bi-exclamation-triangle icon-zlagoda fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-3">Ви впевнені?</h5>
+            <p class="text-muted small">
+              Цю дію неможливо буде скасувати. Ви дійсно хочете видалити цей
+              запис?
+            </p>
+            <div class="d-flex gap-2 mt-4">
+              <button
+                type="button"
+                class="btn btn-light w-100 rounded-3"
+                data-bs-dismiss="modal"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                id="btnConfirmDelete"
+                class="btn btn_delete w-100 rounded-3"
+              >
+                Видалити
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-body text-center p-4">
+            <div class="mb-3">
+              <i class="bi bi-door-open icon-zlagoda fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-3">Вже йдете?</h5>
+            <p class="text-muted small">
+              Ви впевнені, що хочете вийти з облікового запису?
+            </p>
+            <div class="d-flex gap-2 mt-4">
+              <button
+                type="button"
+                class="btn btn-light w-100 rounded-3"
+                data-bs-dismiss="modal"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                id="confirmLogout"
+                class="btn btn_delete w-100 rounded-3"
+              >
+                Вийти
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="../../static/js/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   </body>
