@@ -20,6 +20,9 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 from backend.core.database import Base
 from backend.models.employee import Employee
+from backend.models.category import Category
+from backend.models.customer_card import CustomerCard
+from backend.models.product import Product
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
