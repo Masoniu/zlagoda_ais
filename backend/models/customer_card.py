@@ -4,7 +4,6 @@ from backend.core.database import Base
 
 class CustomerCard(Base):
     __tablename__ = "customer_card"
-
     card_number: Mapped[str] = mapped_column(String(13), primary_key=True)
     cust_surname: Mapped[str] = mapped_column(String(50), nullable=False)
     cust_name: Mapped[str] = mapped_column(String(50), nullable=False)

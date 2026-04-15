@@ -23,6 +23,9 @@ from backend.models.employee import Employee
 from backend.models.category import Category
 from backend.models.customer_card import CustomerCard
 from backend.models.product import Product
+from backend.models.store_product import StoreProduct
+from backend.models.check import Check
+from backend.models.sale import Sale
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

@@ -4,7 +4,6 @@ from backend.core.database import Base
 
 class Product(Base):
     __tablename__ = "product"
-
     id_product: Mapped[int] = mapped_column(Integer, primary_key=True)
     category_number: Mapped[int] = mapped_column(
         Integer, 
