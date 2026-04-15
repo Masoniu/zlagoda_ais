@@ -15,6 +15,7 @@ python-multipart = "*"
 pydantic = ">=2.0.0"
 pydantic-settings = "*"
 jinja2 = "*"
+asyncpg = "*"
 
 [dev-packages]
 pytest = "*"
