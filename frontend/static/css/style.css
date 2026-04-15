@@ -1,0 +1,158 @@
+:root {
+  --primary-color: #7d8b38;
+  --secondary-color: #b8c36c;
+  --bg-color: #d4cdc7;
+  --text-color: #371f26;
+  --card-bg: rgba(249, 249, 249, 0.64);
+}
+
+body {
+  font-family: "Montserrat", sans-serif;
+  background-color: var(--bg-color);
+  margin: 0;
+}
+
+h2 {
+  color: var(--text-color) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.5px !important;
+}
+
+.login_page {
+  height: 100vh;
+}
+
+.brand-logo {
+  color: var(--text-dark);
+  text-decoration: none;
+}
+
+.auth-card {
+  background-color: var(--card-bg) !important;
+  width: 400px;
+  box-shadow: 0 15px 35px rgba(55, 31, 38, 0.1) !important;
+}
+
+.auth-card h2,
+.form-label {
+  color: var(--text-dark) !important;
+}
+
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: none !important;
+  transition: 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color) !important;
+}
+
+.auth-input,
+.search_input {
+  background-color: #f8f9fa !important;
+  border: 1px solid #d4cdc7 !important;
+  color: var(--text-dark) !important;
+}
+
+.auth-input:focus,
+.search_input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(125, 139, 56, 0.25) !important;
+}
+
+.welcome_wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 90px);
+  padding: 20px;
+}
+
+.welcome_card {
+  background-color: var(--card-bg);
+  max-width: 700px;
+  width: 100%;
+  border: 1px solid rgba(125, 139, 56, 0.1);
+  color: var(--text-color);
+}
+
+#dynamicGreeting {
+  color: var(--text-color) !important;
+}
+
+.manager_layout {
+  padding-top: 90px !important;
+  display: block !important;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+}
+
+.navbar {
+  background-color: var(--primary-color) !important;
+  min-height: 70px;
+}
+
+.btn_nav {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  border: none !important;
+  border-radius: 8px;
+  transition: 0.2s ease-in-out;
+}
+
+.btn_nav:hover {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.zlagoda_table_header {
+  background-color: transparent !important;
+}
+
+.zlagoda_table_header th {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 15px 10px !important;
+  border: none !important;
+}
+
+.table tbody tr td {
+  border-bottom: 1px solid var(--primary-color) !important;
+  vertical-align: middle !important;
+  padding: 15px 10px !important;
+  color: var(--text-color) !important;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.btn_edit {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 5px 15px;
+}
+
+.btn_delete {
+  background-color: var(--text-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 5px 15px;
+}
+
+.btn_edit:hover,
+.btn_delete:hover {
+  opacity: 0.85;
+  color: white !important;
+}
