@@ -14,6 +14,14 @@ const mockProducts = [
     { id: 102, name: "Яблука Голден", manufacturer: "Україна", chars: "Вагові", category_id: 3 }
 ];
 
+const mockEmployees = [
+    { 
+        id: 12345, password: "123", surname: "Мельник", name: "Анна", patronymic: "Олексіївна",
+        role: "Менеджер", salary: 35000, start_date: "2023-01-10", birth_date: "1990-05-14",
+        phone: "+380951234567", city: "Київ", street: "вул. Хрещатик 15", zip: "02100"
+    }
+];
+
 //rendering
 
 function renderCategories(data) {
@@ -51,6 +59,28 @@ function renderProducts(data) {
     }).join('');
 }
 
+function renderEmployees(data) {
+    const tableBody = document.getElementById('employeeTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = data.map(empl => `
+        <tr>
+            <td class="ps-4 text-muted small">#${empl.id}</td>
+            <td class="fw-semibold">${empl.surname} ${empl.name[0]}. ${empl.patronymic ? empl.patronymic[0] + '.' : ''}</td>
+            <td><span class="badge-empl ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}">${empl.role}</span></td>
+            <td class="text-muted">${empl.phone}</td>
+            <td class="fw-bold">${empl.salary} грн</td>
+            <td class="text-end pe-4">
+                <button class="btn btn-sm p-1 me-2" onclick="viewEmployeeDetails(${empl.id})" title="Детальна інформація">
+                    <i class="bi bi-info-circle icon-zlagoda fs-5"></i>
+                </button>
+                <button class="btn btn-sm btn_edit me-2" onclick="prepareEditEmployee(${empl.id})">Редагувати</button>
+                <button class="btn btn-sm btn_delete" onclick="deleteEmployee(${empl.id})">Видалити</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
 function populateCategoryDropdown() {
     const select = document.getElementById('categorySelectInput');
     if (!select) return;
@@ -67,33 +97,30 @@ if (loginForm) {
     loginForm.addEventListener('submit', function(event) {
         event.preventDefault();
         
+        const enteredID = parseInt(document.getElementById('loginInput').value);
+        const enteredPass = document.getElementById('passwordInput').value;
         const alertMessage = document.getElementById('alertMessage');
-        const submitBtn = document.querySelector('button[type="submit"]');
-
-        const VALID_USER = { login: "Anna", password: "123" };
-        const enteredLogin = document.getElementById('loginInput').value;
-        const enteredPassword = document.getElementById('passwordInput').value;
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
 
         alertMessage.textContent = '';
-        alertMessage.classList.remove('mt-3'); 
         submitBtn.disabled = true;
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
         setTimeout(() => {
-            alertMessage.classList.add('mt-3');
+            const user = mockEmployees.find(e => e.id === enteredID && e.password === enteredPass);
 
-            if (enteredLogin === VALID_USER.login && enteredPassword === VALID_USER.password) {
+            if (user) {
+                const initials = `${user.surname} ${user.name[0]}. ${user.patronymic ? user.patronymic[0] + '.' : ''}`.trim();
+                sessionStorage.setItem('userName', initials);
                 alertMessage.style.color = 'var(--primary-color)';
-                alertMessage.textContent = 'Вітаємо, ' + enteredLogin + '.';
-                sessionStorage.setItem('userName', enteredLogin);
-
+                alertMessage.textContent = `Вітаємо, ${initials}!`;
                 setTimeout(() => {
                     window.location.href = '../manager/home.html';
                 }, 1000);
+
             } else {
                 alertMessage.style.color = 'red';
-                alertMessage.textContent = 'Невірний логін або пароль';
+                alertMessage.textContent = 'Невірний ID або пароль';
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
             }
@@ -171,6 +198,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const employeeModalEl = document.getElementById('addEmployeeModal');
+    if (employeeModalEl) {
+    employeeModalEl.addEventListener('hidden.bs.modal', () => {
+        document.querySelector('#addEmployeeModal .modal-title').textContent = "Картка працівника";
+        document.getElementById('editEmployeeId').value = "";
+        const form = document.getElementById('addEmployeeForm');
+        form.reset();
+        document.getElementById('emplRoleInput').value = "Касир";
+        document.querySelectorAll('.btn-role-select').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.role === "Касир");
+        });
+    });
+}
+
    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
     if (btnConfirmDelete) {
         btnConfirmDelete.onclick = () => {
@@ -186,12 +227,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     mockProducts.splice(index, 1);
                     renderProducts(mockProducts);
                 }
+            } else if (itemToDeleteType === 'employee') {
+                const index = mockEmployees.findIndex(e => e.id === itemToDeleteId);
+                if (index !== -1) {
+                    mockEmployees.splice(index, 1);
+                    renderEmployees(mockEmployees);
+                }
             }
-        
+
             const modalEl = document.getElementById('deleteConfirmModal');
             bootstrap.Modal.getOrCreateInstance(modalEl).hide();
         };
     }
+
+    if (document.getElementById('employeeTableBody')) {
+        renderEmployees(mockEmployees);
+        setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
+        setupEmployeeForm();
+    }
+
+    const roleBtns = document.querySelectorAll('.btn-role-select');
+    roleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            roleBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('emplRoleInput').value = btn.dataset.role;
+        });
+    });
 });
 
 //additional functions
@@ -271,6 +333,47 @@ function setupProductForm() {
     });
 }
 
+function setupEmployeeForm() {
+    const form = document.getElementById('addEmployeeForm');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editEmployeeId').value;
+        
+        const employeeData = {
+            id: editId ? parseInt(editId) : mockEmployees.length + 1,
+            password: document.getElementById('emplPasswordInput').value,
+            surname: document.getElementById('emplSurnameInput').value,
+            name: document.getElementById('emplNameInput').value,
+            patronymic: document.getElementById('emplPatronymicInput').value,
+            role: document.getElementById('emplRoleInput').value,
+            birth_date: document.getElementById('emplBirthInput').value,
+            start_date: document.getElementById('emplStartInput').value,
+            phone: document.getElementById('emplPhoneInput').value,
+            salary: document.getElementById('emplSalaryInput').value,
+            city: document.getElementById('emplCityInput').value,
+            street: document.getElementById('emplStreetInput').value,
+            zip: document.getElementById('emplZipInput').value
+        };
+
+        if (editId) {
+            const index = mockEmployees.findIndex(emp => emp.id === parseInt(editId));
+            if (index !== -1) mockEmployees[index] = employeeData;
+        } else {
+            mockEmployees.push(employeeData);
+        }
+
+        renderEmployees(mockEmployees);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addEmployeeModal')).hide();
+        form.reset();
+        document.getElementById('editEmployeeId').value = "";
+        
+        document.querySelectorAll('.btn-role-select').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-role="Касир"]').classList.add('active');
+    });
+}
+
 function displayUserName() {
     const display = document.getElementById('userNameDisplay');
     if (display) display.textContent = sessionStorage.getItem('userName') || "Користувач";
@@ -295,6 +398,13 @@ function deleteCategory(id) {
 function deleteProduct(id) {
     itemToDeleteId = id;
     itemToDeleteType = 'product';
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
+    modal.show();
+}
+
+function deleteEmployee(id) {
+    itemToDeleteId = id;
+    itemToDeleteType = 'employee';
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
     modal.show();
 }
@@ -325,5 +435,83 @@ function prepareEditProduct(id) {
     document.querySelector('#addProductModal .modal-title').textContent = "Редагувати товар";
 
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('addProductModal'));
+    modal.show();
+}
+
+function prepareEditEmployee(id) {
+    const empl = mockEmployees.find(e => e.id === id);
+    if (!empl) return;
+
+    document.getElementById('editEmployeeId').value = empl.id;
+    document.getElementById('emplPasswordInput').value = empl.password;
+    document.getElementById('emplSurnameInput').value = empl.surname;
+    document.getElementById('emplNameInput').value = empl.name;
+    document.getElementById('emplPatronymicInput').value = empl.patronymic || "";
+    document.getElementById('emplBirthInput').value = empl.birth_date;
+    document.getElementById('emplStartInput').value = empl.start_date;
+    document.getElementById('emplPhoneInput').value = empl.phone;
+    document.getElementById('emplSalaryInput').value = empl.salary;
+    document.getElementById('emplCityInput').value = empl.city;
+    document.getElementById('emplStreetInput').value = empl.street;
+    document.getElementById('emplZipInput').value = empl.zip;
+
+    document.getElementById('emplRoleInput').value = empl.role;
+    document.querySelectorAll('.btn-role-select').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.role === empl.role);
+    });
+
+    document.querySelector('#addEmployeeModal .modal-title').textContent = "Редагувати працівника";
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addEmployeeModal')).show();
+}
+
+function togglePasswordVisibility() {
+    const passInput = document.getElementById('emplPasswordInput');
+    const icon = document.querySelector('.password-toggle-icon'); // Шукаємо за класом
+    
+    if (passInput.type === "password") {
+        passInput.type = "text";
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        passInput.type = "password";
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+    }
+}
+
+function viewEmployeeDetails(id) {
+    const empl = mockEmployees.find(e => e.id === id);
+    if (!empl) return;
+
+    const header = document.getElementById('v-header');
+    
+    if (header) {
+        header.classList.remove('badge-manager', 'badge-cashier');
+        const closeBtn = header.querySelector('.btn-close');
+        
+        if (closeBtn) {
+            closeBtn.classList.remove('btn-close-white');
+        }
+
+        if (empl.role === 'Менеджер') {
+            header.classList.add('badge-manager');
+            if (closeBtn) closeBtn.classList.add('btn-close-white');
+        } else {
+            header.classList.add('badge-cashier');
+            if (closeBtn) closeBtn.classList.add('btn-close-white');
+        }
+    }
+
+    document.getElementById('v-id').textContent = `Табельний номер: #${empl.id}`;
+    document.getElementById('v-fullName').textContent = `${empl.surname} ${empl.name} ${empl.patronymic || ''}`;
+    document.getElementById('v-phone').textContent = empl.phone;
+    document.getElementById('v-salary').textContent = `${empl.salary} грн`;
+    document.getElementById('v-birth').textContent = empl.birth_date;
+    document.getElementById('v-start').textContent = empl.start_date;
+    document.getElementById('v-address').textContent = `${empl.zip}, м. ${empl.city}, ${empl.street}`;
+    
+    const roleBadge = document.getElementById('v-role');
+    roleBadge.textContent = empl.role;
+    roleBadge.className = `badge-empl ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}`;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('viewEmployeeModal'));
     modal.show();
 }
