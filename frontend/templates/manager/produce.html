@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Менеджер - товари</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="../../static/css/style.css" />
+  </head>
+  <body class="manager_layout">
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand brand_logo fw-bold fs-4" href="home.html"
+          >ZLAGODA</a
+        >
+        <button
+          class="navbar-toggler border-white"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div
+          class="collapse navbar-collapse justify-content-center"
+          id="navbarNav"
+        >
+          <ul class="navbar-nav gap-3">
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="produce.html"
+                >Товари</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="prod_group.html"
+                >Категорії</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="workers.html"
+                >Працівники</a
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <span
+            class="navbar-text text-white me-3 d-none d-sm-inline"
+            id="userNameDisplay"
+          ></span>
+          <button class="btn btn_nav btn-sm fw-bold px-3 py-2" id="logoutBtn">
+            Вийти
+          </button>
+        </div>
+      </div>
+    </nav>
+    <main class="container mt-5">
+      <h2 class="mb-4 fw-bold">Каталог товарів</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="input-group search-container">
+          <span class="input-group-text bg-white border-0 ps-3">
+            <i class="bi bi-search icon-zlagoda"></i>
+          </span>
+          <input
+            type="text"
+            id="productSearch"
+            class="form-control border-0 shadow-none ps-2"
+            placeholder="Пошук за назвою"
+          />
+        </div>
+        <button
+          class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
+          data-bs-toggle="modal"
+          data-bs-target="#addProductModal"
+        >
+          + Додати товар
+        </button>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4 mt-5">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead class="zlagoda_table_header">
+              <tr>
+                <th class="ps-4">ID</th>
+                <th>Назва товару</th>
+                <th>Виробник</th>
+                <th>Характеристики</th>
+                <th>Категорія</th>
+                <th class="text-end pe-4">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <div
+      class="modal fade"
+      id="addProductModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+          <div class="modal-header border-0">
+            <h5 class="modal-title fw-bold">Новий товар</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="addProductForm">
+              <input type="hidden" id="editProductId" />
+              <div class="mb-3">
+                <label class="form-label">Назва товару</label>
+                <input
+                  type="text"
+                  class="form-control auth-input"
+                  id="productNameInput"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Виробник</label>
+                <input
+                  type="text"
+                  class="form-control auth-input"
+                  id="productManufacturerInput"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Характеристики</label>
+                <textarea
+                  class="form-control auth-input"
+                  id="productCharsInput"
+                  rows="2"
+                ></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Категорія</label>
+                <select
+                  class="form-select auth-input"
+                  id="categorySelectInput"
+                  required
+                >
+                  <option value="" selected disabled>
+                    Оберіть категорію...
+                  </option>
+                </select>
+              </div>
+              <div class="text-end">
+                <button type="submit" class="btn btn-primary">Зберегти</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="deleteConfirmModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-body text-center p-4">
+            <div class="mb-3">
+              <i class="bi bi-exclamation-triangle icon-zlagoda fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-3">Ви впевнені?</h5>
+            <p class="text-muted small">
+              Цю дію неможливо буде скасувати. Ви дійсно хочете видалити цей
+              запис?
+            </p>
+            <div class="d-flex gap-2 mt-4">
+              <button
+                type="button"
+                class="btn btn-light w-100 rounded-3"
+                data-bs-dismiss="modal"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                id="btnConfirmDelete"
+                class="btn btn_delete w-100 rounded-3"
+              >
+                Видалити
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-body text-center p-4">
+            <div class="mb-3">
+              <i class="bi bi-door-open icon-zlagoda fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-3">Вже йдете?</h5>
+            <p class="text-muted small">
+              Ви впевнені, що хочете вийти з облікового запису?
+            </p>
+            <div class="d-flex gap-2 mt-4">
+              <button
+                type="button"
+                class="btn btn-light w-100 rounded-3"
+                data-bs-dismiss="modal"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                id="confirmLogout"
+                class="btn btn_delete w-100 rounded-3"
+              >
+                Вийти
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="../../static/js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
