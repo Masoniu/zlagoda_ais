@@ -14,11 +14,27 @@ const mockProducts = [
     { id: 102, name: "Яблука Голден", manufacturer: "Україна", chars: "Вагові", category_id: 3 }
 ];
 
+const mockStoreProducts = [
+    { upc: "123456789012", id_product: 101, selling_price: 45.50, products_number: 100, promotional_product: false },
+    { upc: "987654321098", id_product: 102, selling_price: 25.00, products_number: 50, promotional_product: true }
+];
+
 const mockEmployees = [
     { 
         id: 12345, password: "123", surname: "Мельник", name: "Анна", patronymic: "Олексіївна",
         role: "Менеджер", salary: 35000, start_date: "2023-01-10", birth_date: "1990-05-14",
         phone: "+380951234567", city: "Київ", street: "вул. Хрещатик 15", zip: "02100"
+    }
+];
+
+const mockCustomers = [
+    { 
+        card_number: "1", surname: "Коваленко", name: "Олена", patronymic: "Іванівна", 
+        phone: "+380671112233", city: "Київ", street: "Польова 12", zip: "03056", percent: 5 
+    },
+    { 
+        card_number: "2", surname: "Іванов", name: "Петро", patronymic: "Олегович", 
+        phone: "+380509998877", city: "", street: "", zip: "", percent: 10 
     }
 ];
 
@@ -59,6 +75,34 @@ function renderProducts(data) {
     }).join('');
 }
 
+function renderStoreProducts(data) {
+    const tableBody = document.getElementById('storeProductTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = data.map(sp => {
+        const productInfo = mockProducts.find(p => p.id === sp.id_product);
+        const productName = productInfo ? productInfo.name : "Невідомий товар";
+
+        const promoBadge = sp.promotional_product 
+        ? '<span class="badge bg-success bg-opacity-10 text-success border border-success p-2 fs-6">Так</span>' 
+        : '<span class="badge bg-light text-muted fw-normal p-2 fs-6">Ні</span>';
+
+        return `
+            <tr>
+                <td class="ps-4 text-muted small fw-bold">${sp.upc}</td>
+                <td class="fw-semibold">${productName}</td>
+                <td class="fw-bold">${sp.selling_price.toFixed(2)}</td>
+                <td>${sp.products_number} шт.</td>
+                <td>${promoBadge}</td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn_edit me-2" onclick="prepareEditStoreProduct('${sp.upc}')">Редагувати</button>
+                    <button class="btn btn-sm btn_delete" onclick="deleteStoreProduct('${sp.upc}')">Видалити</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
 function renderEmployees(data) {
     const tableBody = document.getElementById('employeeTableBody');
     if (!tableBody) return;
@@ -81,12 +125,43 @@ function renderEmployees(data) {
     `).join('');
 }
 
+function renderCustomers(data) {
+    const tableBody = document.getElementById('customerTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = data.map(cust => `
+        <tr>
+            <td class="ps-4 text-muted small fw-bold">${cust.card_number}</td>
+            <td class="fw-semibold">${cust.surname} ${cust.name[0]}. ${cust.patronymic ? cust.patronymic[0] + '.' : ''}</td>
+            <td class="text-muted">${cust.phone}</td>
+            <td><span class="badge bg-success bg-opacity-10 text-success border border-success p-2 fs-6">${cust.percent}%</span></td>
+            <td class="text-end pe-4">
+                <button class="btn btn-sm p-1 me-2" onclick="viewCustomerDetails('${cust.card_number}')" title="Детальна інформація">
+                    <i class="bi bi-info-circle icon-zlagoda fs-5"></i>
+                </button>
+                <button class="btn btn-sm btn_edit me-2" onclick="prepareEditCustomer('${cust.card_number}')">Редагувати</button>
+                <button class="btn btn-sm btn_delete" onclick="deleteCustomer('${cust.card_number}')">Видалити</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
 function populateCategoryDropdown() {
     const select = document.getElementById('categorySelectInput');
     if (!select) return;
     select.innerHTML = '<option value="" selected disabled>Оберіть категорію...</option>';
     mockCategories.forEach(cat => {
         select.innerHTML += `<option value="${cat.category_number}">${cat.category_name}</option>`;
+    });
+}
+
+function populateProductDropdown() {
+    const select = document.getElementById('spProductSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="" selected disabled>Оберіть товар з довідника...</option>';
+    mockProducts.forEach(prod => {
+        select.innerHTML += `<option value="${prod.id}">${prod.name} (${prod.manufacturer || 'Без виробника'})</option>`;
     });
 }
 
@@ -143,6 +218,25 @@ document.addEventListener('DOMContentLoaded', () => {
         populateCategoryDropdown();
         setupSearch('productSearch', mockProducts, renderProducts, 'name');
         setupProductForm();
+    }
+
+    if (document.getElementById('storeProductTableBody')) {
+        renderStoreProducts(mockStoreProducts);
+        populateProductDropdown();
+        setupSearch('storeProductSearch', mockStoreProducts, renderStoreProducts, 'upc');
+        setupStoreProductForm();
+    }
+
+    if (document.getElementById('employeeTableBody')) {
+        renderEmployees(mockEmployees);
+        setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
+        setupEmployeeForm();
+    }
+
+    if (document.getElementById('customerTableBody')) {
+        renderCustomers(mockCustomers);
+        setupSearch('customerSearch', mockCustomers, renderCustomers, 'surname');
+        setupCustomerForm();
     }
 
    const logoutBtn = document.getElementById('logoutBtn');
@@ -233,17 +327,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     mockEmployees.splice(index, 1);
                     renderEmployees(mockEmployees);
                 }
+            } else if (itemToDeleteType === 'customer') {
+                const index = mockCustomers.findIndex(c => c.card_number === itemToDeleteId);
+                if (index !== -1) {
+                    mockCustomers.splice(index, 1);
+                    renderCustomers(mockCustomers);
+                }
+            } else if (itemToDeleteType === 'store_product') {
+                const index = mockStoreProducts.findIndex(sp => sp.upc === itemToDeleteId);
+                if (index !== -1) {
+                    mockStoreProducts.splice(index, 1);
+                    renderStoreProducts(mockStoreProducts);
+                }
             }
 
             const modalEl = document.getElementById('deleteConfirmModal');
             bootstrap.Modal.getOrCreateInstance(modalEl).hide();
         };
-    }
-
-    if (document.getElementById('employeeTableBody')) {
-        renderEmployees(mockEmployees);
-        setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
-        setupEmployeeForm();
     }
 
     const roleBtns = document.querySelectorAll('.btn-role-select');
@@ -296,41 +396,58 @@ function setupCategoryForm() {
     });
 }
 
-function setupProductForm() {
-    const form = document.getElementById('addProductForm');
+function setupStoreProductForm() {
+    const form = document.getElementById('addStoreProductForm');
     if (!form) return;
+
+    const promoSwitch = document.getElementById('spPromoInput');
+    const promoText = document.getElementById('promoStatusText');
+    if (promoSwitch) {
+        promoSwitch.addEventListener('change', function() {
+            promoText.textContent = this.checked ? "Так" : "Ні";
+        });
+    }
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const editIdEl = document.getElementById('editProductId');
-        const nameEl = document.getElementById('productNameInput');
-        const manufEl = document.getElementById('productManufacturerInput');
-        const charsEl = document.getElementById('productCharsInput');
-        const catSelectEl = document.getElementById('categorySelectInput');
-        const editId = editIdEl ? editIdEl.value : "";
-        const productData = {
-            id: editId ? parseInt(editId) : Math.floor(Math.random() * 1000),
-            name: nameEl.value,
-            manufacturer: manufEl ? manufEl.value : "",
-            chars: charsEl.value,
-            category_id: parseInt(catSelectEl.value)
+        const upcInput = document.getElementById('spUpcInput').value.trim();
+        const isEditMode = document.getElementById('isEditMode').value === "true";
+        const alertMessage = document.getElementById('spAlertMessage');
+        
+        if (alertMessage) alertMessage.textContent = '';
+
+        const storeProductData = {
+            upc: upcInput,
+            id_product: parseInt(document.getElementById('spProductSelect').value),
+            selling_price: parseFloat(document.getElementById('spPriceInput').value),
+            products_number: parseInt(document.getElementById('spQuantityInput').value),
+            promotional_product: document.getElementById('spPromoInput').checked
         };
-        if (editId) {
-            const index = mockProducts.findIndex(p => p.id === parseInt(editId));
-            if (index !== -1) mockProducts[index] = productData;
+
+        if (isEditMode) {
+            const index = mockStoreProducts.findIndex(sp => sp.upc === upcInput);
+            if (index !== -1) mockStoreProducts[index] = storeProductData;
         } else {
-            mockProducts.push(productData);
+            const exists = mockStoreProducts.find(sp => sp.upc === upcInput);
+            if (exists) {
+                if (alertMessage) {
+                    alertMessage.textContent = 'Товар з таким UPC вже існує!';
+                    alertMessage.style.color = 'red';
+                }
+                return;
+            }
+            mockStoreProducts.push(storeProductData);
         }
 
-        renderProducts(mockProducts);
-        
-        const modalEl = document.getElementById('addProductModal');
-        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modalInstance.hide();
-        
-        form.reset();
-        if (editIdEl) editIdEl.value = "";
+        renderStoreProducts(mockStoreProducts);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addStoreProductModal')).hide();
+        resetStoreProductForm();
     });
+
+    const modalEl = document.getElementById('addStoreProductModal');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', resetStoreProductForm);
+    }
 }
 
 function setupEmployeeForm() {
@@ -374,6 +491,49 @@ function setupEmployeeForm() {
     });
 }
 
+function setupCustomerForm() {
+    const form = document.getElementById('addCustomerForm');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editCustomerCardNumber').value;
+        
+        const customerData = {
+            card_number: editId ? parseInt(editId) : mockCustomers.length + 1,
+            surname: document.getElementById('custSurnameInput').value.trim(),
+            name: document.getElementById('custNameInput').value.trim(),
+            patronymic: document.getElementById('custPatronymicInput').value.trim(),
+            phone: document.getElementById('custPhoneInput').value.trim(),
+            percent: parseInt(document.getElementById('custPercentInput').value),
+            city: document.getElementById('custCityInput').value.trim(),
+            street: document.getElementById('custStreetInput').value.trim(),
+            zip: document.getElementById('custZipInput').value.trim()
+        };
+
+        if (editId) {
+            const index = mockCustomers.findIndex(c => c.card_number === editId);
+            if (index !== -1) mockCustomers[index] = customerData;
+        } else {
+            mockCustomers.push(customerData);
+        }
+
+        renderCustomers(mockCustomers);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addCustomerModal')).hide();
+        form.reset();
+        document.getElementById('editCustomerCardNumber').value = "";
+    });
+
+    const modalEl = document.getElementById('addCustomerModal');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            document.querySelector('#addCustomerModal .modal-title').textContent = "Картка лояльності";
+            document.getElementById('editCustomerCardNumber').value = "";
+            form.reset();
+        });
+    }
+}
+
 function displayUserName() {
     const display = document.getElementById('userNameDisplay');
     if (display) display.textContent = sessionStorage.getItem('userName') || "Користувач";
@@ -402,9 +562,23 @@ function deleteProduct(id) {
     modal.show();
 }
 
+function deleteStoreProduct(upc) {
+    itemToDeleteId = upc;
+    itemToDeleteType = 'store_product';
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
+    modal.show();
+}
+
 function deleteEmployee(id) {
     itemToDeleteId = id;
     itemToDeleteType = 'employee';
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
+    modal.show();
+}
+
+function deleteCustomer(cardNumber) {
+    itemToDeleteId = cardNumber;
+    itemToDeleteType = 'customer';
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
     modal.show();
 }
@@ -438,6 +612,29 @@ function prepareEditProduct(id) {
     modal.show();
 }
 
+function prepareEditStoreProduct(upc) {
+    const sp = mockStoreProducts.find(item => item.upc === upc);
+    if (!sp) return;
+
+    document.getElementById('isEditMode').value = "true";
+    
+    const upcInput = document.getElementById('spUpcInput');
+    upcInput.value = sp.upc;
+    upcInput.readOnly = true;
+    upcInput.classList.add('bg-light');
+
+    document.getElementById('spProductSelect').value = sp.id_product;
+    document.getElementById('spPriceInput').value = sp.selling_price;
+    document.getElementById('spQuantityInput').value = sp.products_number;
+    
+    const promoSwitch = document.getElementById('spPromoInput');
+    promoSwitch.checked = sp.promotional_product;
+    document.getElementById('promoStatusText').textContent = sp.promotional_product ? "Так" : "Ні";
+
+    document.querySelector('#addStoreProductModal .modal-title').textContent = "Редагувати партію";
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addStoreProductModal')).show();
+}
+
 function prepareEditEmployee(id) {
     const empl = mockEmployees.find(e => e.id === id);
     if (!empl) return;
@@ -462,6 +659,24 @@ function prepareEditEmployee(id) {
 
     document.querySelector('#addEmployeeModal .modal-title').textContent = "Редагувати працівника";
     bootstrap.Modal.getOrCreateInstance(document.getElementById('addEmployeeModal')).show();
+}
+
+function prepareEditCustomer(cardNumber) {
+    const cust = mockCustomers.find(c => c.card_number === cardNumber);
+    if (!cust) return;
+
+    document.getElementById('editCustomerCardNumber').value = cust.card_number;
+    document.getElementById('custSurnameInput').value = cust.surname;
+    document.getElementById('custNameInput').value = cust.name;
+    document.getElementById('custPatronymicInput').value = cust.patronymic || "";
+    document.getElementById('custPhoneInput').value = cust.phone;
+    document.getElementById('custPercentInput').value = cust.percent;
+    document.getElementById('custCityInput').value = cust.city || "";
+    document.getElementById('custStreetInput').value = cust.street || "";
+    document.getElementById('custZipInput').value = cust.zip || "";
+
+    document.querySelector('#addCustomerModal .modal-title').textContent = "Редагувати клієнта";
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('addCustomerModal')).show();
 }
 
 function togglePasswordVisibility() {
@@ -514,4 +729,46 @@ function viewEmployeeDetails(id) {
 
     const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('viewEmployeeModal'));
     modal.show();
+}
+
+function viewCustomerDetails(cardNumber) {
+    const cust = mockCustomers.find(c => c.card_number === cardNumber);
+    if (!cust) return;
+
+    document.getElementById('v-cust-id').textContent = `Номер карти: ${cust.card_number}`;
+    document.getElementById('v-cust-fullName').textContent = `${cust.surname} ${cust.name} ${cust.patronymic || ''}`;
+    document.getElementById('v-cust-percent').textContent = cust.percent;
+    document.getElementById('v-cust-phone').textContent = cust.phone;
+
+    const addressEl = document.getElementById('v-cust-address');
+    if (cust.city || cust.street) {
+        addressEl.textContent = `${cust.zip ? cust.zip + ', ' : ''}м. ${cust.city}, ${cust.street}`;
+        addressEl.classList.remove('text-muted');
+    } else {
+        addressEl.textContent = "Не вказано";
+        addressEl.classList.add('text-muted');
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('viewCustomerModal'));
+    modal.show();
+}
+
+function resetStoreProductForm() {
+    const form = document.getElementById('addStoreProductForm');
+    if(form) form.reset();
+    
+    document.querySelector('#addStoreProductModal .modal-title').textContent = "Товар на полиці";
+    document.getElementById('isEditMode').value = "false";
+
+    const alertMessage = document.getElementById('spAlertMessage');
+    if (alertMessage) alertMessage.textContent = '';
+    
+    const upcInput = document.getElementById('spUpcInput');
+    if (upcInput) {
+        upcInput.readOnly = false;
+        upcInput.classList.remove('bg-light');
+    }
+
+    const promoText = document.getElementById('promoStatusText');
+    if(promoText) promoText.textContent = "Ні";
 }
