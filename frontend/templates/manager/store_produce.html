@@ -51,9 +51,35 @@
             <thead class="zlagoda_table_header">
               <tr>
                 <th class="ps-4">UPC</th>
-                <th>Назва товару</th>
+                <th
+                  class="sortable-header"
+                  onclick="
+                    sortTableData(
+                      mockStoreProducts,
+                      'productName',
+                      'string',
+                      renderStoreProducts,
+                    )
+                  "
+                >
+                  Назва товару
+                  <i class="bi bi-arrow-down-up small text-muted ms-1"></i>
+                </th>
                 <th>Ціна</th>
-                <th>Кількість</th>
+                <th
+                  class="sortable-header"
+                  onclick="
+                    sortTableData(
+                      mockStoreProducts,
+                      'products_number',
+                      'number',
+                      renderStoreProducts,
+                    )
+                  "
+                >
+                  Кількість
+                  <i class="bi bi-arrow-down-up small text-muted ms-1"></i>
+                </th>
                 <th>Акція</th>
                 <th class="text-end pe-4">Дії</th>
               </tr>
