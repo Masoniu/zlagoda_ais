@@ -5,6 +5,8 @@ from sqlalchemy import select
 from backend.core.database import get_db
 from backend.models.category import Category as CategoryModel
 from backend.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
+from backend.api.dep import get_current_user
+from backend.models.employee import Employee
 
 router = APIRouter()
 
@@ -46,9 +48,28 @@ async def update_category(category_number: int, category_data: CategoryUpdate, d
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    # Update the fields
     category.category_name = category_data.category_name
 
     await db.commit()
     await db.refresh(category)
     return category
+
+
+@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+async def create_category(
+        category: CategoryCreate,
+        db: AsyncSession = Depends(get_db),
+        current_user: Employee = Depends(get_current_user)
+):
+    """Create a new category. Restricted to Managers only."""
+    if current_user.empl_role != "Менеджер":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have enough permissions"
+        )
+
+    new_category = CategoryModel(category_name=category.category_name)
+    db.add(new_category)
+    await db.commit()
+    await db.refresh(new_category)
+    return new_category

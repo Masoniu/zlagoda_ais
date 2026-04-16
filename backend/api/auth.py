@@ -5,6 +5,7 @@ from backend.core.database import SessionLocal
 from backend.services.auth import authenticate_user
 from backend.core.security import create_access_token
 
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 async def get_db():
