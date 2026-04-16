@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Менеджер - клієнти</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="../../static/css/style.css" />
+  </head>
+  <body class="manager_layout">
+    <!--NAVIGATION PANEL-->
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand brand_logo fw-bold fs-4" href="home.html"
+          >ZLAGODA</a
+        >
+        <button
+          class="navbar-toggler border-white"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div
+          class="collapse navbar-collapse justify-content-center"
+          id="navbarNav"
+        >
+          <ul class="navbar-nav gap-3">
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="produce.html"
+                >Товари</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link text-white fw-semibold"
+                href="store_produce.html"
+                >Товари в магазині</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="prod_group.html"
+                >Категорії</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="workers.html"
+                >Працівники</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-white fw-semibold" href="customers.html"
+                >Клієнти</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div class="d-flex align-items-center">
+          <span
+            class="navbar-text text-white me-3 d-none d-sm-inline"
+            id="userNameDisplay"
+          >
+          </span>
+          <button class="btn btn_nav btn-sm fw-bold px-3 py-2" id="logoutBtn">
+            Вийти
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container mt-5">
+      <h2 class="mb-4 fw-bold">Карти клієнтів</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="input-group search-container">
+          <span class="input-group-text bg-white border-0 ps-3">
+            <i class="bi bi-search icon-zlagoda"></i>
+          </span>
+          <input
+            type="text"
+            id="customerSearch"
+            class="form-control border-0 shadow-none ps-2"
+            placeholder="Пошук за прізвищем"
+          />
+        </div>
+        <button
+          class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
+          data-bs-toggle="modal"
+          data-bs-target="#addCustomerModal"
+        >
+          + Додати клієнта
+        </button>
+      </div>
+
+      <!--TABLE-->
+      <div class="card border-0 shadow-sm rounded-4 mt-5">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead class="zlagoda_table_header">
+              <tr>
+                <th class="ps-4">ID</th>
+                <th>ПІБ</th>
+                <th>Телефон</th>
+                <th>Знижка</th>
+                <th class="text-end pe-4">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="customerTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!--WINDOW FOR NEW CUSTOMER-->
+    <div
+      class="modal fade"
+      id="addCustomerModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">Картка лояльності</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <form id="addCustomerForm">
+              <input type="hidden" id="editCustomerCardNumber" />
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Прізвище*</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="custSurnameInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">Ім'я*</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="custNameInput"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">По батькові</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="custPatronymicInput"
+                  />
+                </div>
+              </div>
+              <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold"
+                    >Контактний тел.*</label
+                  >
+                  <input
+                    type="tel"
+                    class="form-control auth-input"
+                    id="custPhoneInput"
+                    placeholder="+380..."
+                    maxlength="13"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold"
+                    >Відсоток знижки*</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control auth-input"
+                    id="custPercentInput"
+                    min="0"
+                    max="100"
+                    required
+                  />
+                </div>
+              </div>
+              <h6 class="fw-bold mb-3 border-top pt-4">Адреса</h6>
+              <div class="row g-3 mb-4">
+                <div class="col-md-5">
+                  <label class="form-label small fw-bold">Місто</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="custCityInput"
+                  />
+                </div>
+                <div class="col-md-7">
+                  <label class="form-label small fw-bold"
+                    >Вулиця та Індекс</label
+                  >
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control auth-input w-75"
+                      id="custStreetInput"
+                      placeholder="вул..."
+                    />
+                    <input
+                      type="text"
+                      class="form-control auth-input w-25"
+                      id="custZipInput"
+                      placeholder="00000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-end border-top pt-3">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                  Зберегти клієнта
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--WINDOW FOR VIEWING CUSTOMER DETAILS-->
+    <div
+      class="modal fade"
+      id="viewCustomerModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+          <div
+            class="modal-header border-0 rounded-top-4 bg-light"
+            id="v-cust-header"
+          >
+            <h5 class="modal-title fw-bold">Досьє клієнта</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="text-center mb-4">
+              <div class="display-1 text-muted">
+                <i class="bi bi-credit-card-2-front icon-zlagoda"></i>
+              </div>
+              <div id="v-cust-id" class="text-muted small mb-2"></div>
+              <h4 id="v-cust-fullName" class="fw-bold mb-2"></h4>
+              <span
+                class="badge bg-success bg-opacity-10 text-success border border-success p-2 fs-6"
+              >
+                Знижка: <span id="v-cust-percent"></span>%
+              </span>
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <p class="small text-muted mb-0">Телефон</p>
+                <p id="v-cust-phone" class="fw-semibold mb-0"></p>
+              </div>
+              <div class="col-12 border-top pt-2">
+                <p class="small text-muted mb-0">Адреса</p>
+                <p id="v-cust-address" class="fw-semibold mb-0"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--WINDOW TO CONFIRM DELETE-->
+    <div
+      class="modal fade"
+      id="deleteConfirmModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-body text-center p-4">
+            <div class="mb-3">
+              <i class="bi bi-exclamation-triangle icon-zlagoda fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-3">Ви впевнені?</h5>
+            <p class="text-muted small">
+              Цю дію неможливо буде скасувати. Ви дійсно хочете видалити цей
+              запис?
+            </p>
+            <div class="d-flex gap-2 mt-4">
+              <button
+                type="button"
+                class="btn btn-light w-100 rounded-3"
+                data-bs-dismiss="modal"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                id="btnConfirmDelete"
+                class="btn btn_delete w-100 rounded-3"
+              >
+                Видалити
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--WINDOW TO CONFIRM LOGOUT-->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-body text-center p-4">
+            <div class="mb-3">
+              <i class="bi bi-door-open icon-zlagoda fs-1"></i>
+            </div>
+            <h5 class="fw-bold mb-3">Вже йдете?</h5>
+            <p class="text-muted small">
+              Ви впевнені, що хочете вийти з облікового запису?
+            </p>
+            <div class="d-flex gap-2 mt-4">
+              <button
+                type="button"
+                class="btn btn-light w-100 rounded-3"
+                data-bs-dismiss="modal"
+              >
+                Скасувати
+              </button>
+              <button
+                type="button"
+                id="confirmLogout"
+                class="btn btn_delete w-100 rounded-3"
+              >
+                Вийти
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="../../static/js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
