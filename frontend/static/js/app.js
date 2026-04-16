@@ -1,6 +1,8 @@
 //data
 let itemToDeleteId = null;
 let itemToDeleteType = null;
+let currentSortColumn = '';
+let isAscending = true;
 
 const mockCategories = [
     { category_number: 1, category_name: "Молочні продукти" },
@@ -284,6 +286,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (document.getElementById('storeProductTableBody')) {
+        mockStoreProducts.forEach(sp => {
+        const prod = mockProducts.find(p => p.id === sp.id_product); 
+        sp.productName = prod ? prod.name : 'Невідомий товар';
+    });
         renderStoreProducts(mockStoreProducts);
         populateProductDropdown();
         setupSearch('storeProductSearch', mockStoreProducts, renderStoreProducts, 'upc');
@@ -930,4 +936,32 @@ function resetStoreProductForm() {
 
     const promoText = document.getElementById('promoStatusText');
     if(promoText) promoText.textContent = "Ні";
+}
+
+function sortTableData(dataArray, key, type, renderFunction) {
+    if (currentSortColumn === key) {
+        isAscending = !isAscending;
+    } else {
+        currentSortColumn = key;
+        isAscending = true;
+    }
+
+    dataArray.sort((a, b) => {
+        let valA = a[key];
+        let valB = b[key];
+
+        if (type === 'string') {
+            valA = valA ? valA.toString().toLowerCase() : '';
+            valB = valB ? valB.toString().toLowerCase() : '';
+            
+            if (valA < valB) return isAscending ? -1 : 1;
+            if (valA > valB) return isAscending ? 1 : -1;
+            return 0;
+        } 
+        else if (type === 'number') {
+            return isAscending ? valA - valB : valB - valA;
+        }
+    });
+
+    renderFunction(dataArray);
 }
