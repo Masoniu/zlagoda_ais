@@ -20,67 +20,7 @@
   </head>
 
   <body class="manager_layout">
-    <!--NAVIGATION PANEL-->
-    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
-      <div class="container-fluid px-4">
-        <a class="navbar-brand brand_logo fw-bold fs-4" href="home.html"
-          >ZLAGODA</a
-        >
-        <button
-          class="navbar-toggler border-white"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div
-          class="collapse navbar-collapse justify-content-center"
-          id="navbarNav"
-        >
-          <ul class="navbar-nav gap-3">
-            <li class="nav-item">
-              <a class="nav-link text-white fw-semibold" href="produce.html"
-                >Товари</a
-              >
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link text-white fw-semibold"
-                href="store_produce.html"
-                >Товари в магазині</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white fw-semibold" href="prod_group.html"
-                >Категорії</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white fw-semibold" href="workers.html"
-                >Працівники</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-white fw-semibold" href="customers.html"
-                >Клієнти</a
-              >
-            </li>
-          </ul>
-        </div>
-
-        <div class="d-flex align-items-center">
-          <span
-            class="navbar-text text-white me-3 d-none d-sm-inline"
-            id="userNameDisplay"
-          ></span>
-          <button class="btn btn_nav btn-sm fw-bold px-3 py-2" id="logoutBtn">
-            Вийти
-          </button>
-        </div>
-      </div>
-    </nav>
+    <div id="navbar_placeholder"></div>
 
     <main class="container mt-5">
       <h2 class="mb-4 fw-bold">Категорії товарів</h2>
@@ -171,77 +111,7 @@
       </div>
     </div>
 
-    <!--WINDOW TO CONFIRM LOGOUT-->
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow">
-          <div class="modal-body text-center p-4">
-            <div class="mb-3">
-              <i class="bi bi-door-open icon-zlagoda fs-1"></i>
-            </div>
-            <h5 class="fw-bold mb-3">Вже йдете?</h5>
-            <p class="text-muted small">
-              Ви впевнені, що хочете вийти з облікового запису?
-            </p>
-            <div class="d-flex gap-2 mt-4">
-              <button
-                type="button"
-                class="btn btn-light w-100 rounded-3"
-                data-bs-dismiss="modal"
-              >
-                Скасувати
-              </button>
-              <button
-                type="button"
-                id="confirmLogout"
-                class="btn btn_delete w-100 rounded-3"
-              >
-                Вийти
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!--WINDOW TO CONFIRM DELETE-->
-    <div
-      class="modal fade"
-      id="deleteConfirmModal"
-      tabindex="-1"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow">
-          <div class="modal-body text-center p-4">
-            <div class="mb-3">
-              <i class="bi bi-exclamation-triangle icon-zlagoda fs-1"></i>
-            </div>
-            <h5 class="fw-bold mb-3">Ви впевнені?</h5>
-            <p class="text-muted small">
-              Цю дію неможливо буде скасувати. Ви дійсно хочете видалити цей
-              запис?
-            </p>
-            <div class="d-flex gap-2 mt-4">
-              <button
-                type="button"
-                class="btn btn-light w-100 rounded-3"
-                data-bs-dismiss="modal"
-              >
-                Скасувати
-              </button>
-              <button
-                type="button"
-                id="btnConfirmDelete"
-                class="btn btn_delete w-100 rounded-3"
-              >
-                Видалити
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="modals_placeholder"></div>
     <script src="../../static/js/app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   </body>
