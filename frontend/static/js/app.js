@@ -89,9 +89,9 @@ function renderStoreProducts(data) {
 
         return `
             <tr>
-                <td class="ps-4 text-muted small fw-bold">${sp.upc}</td>
+                <td class="ps-4 text-muted small">#${sp.upc}</td>
                 <td class="fw-semibold">${productName}</td>
-                <td class="fw-bold">${sp.selling_price.toFixed(2)}</td>
+                <td>${sp.selling_price.toFixed(2)}</td>
                 <td>${sp.products_number} шт.</td>
                 <td>${promoBadge}</td>
                 <td class="text-end pe-4">
@@ -113,7 +113,7 @@ function renderEmployees(data) {
             <td class="fw-semibold">${empl.surname} ${empl.name[0]}. ${empl.patronymic ? empl.patronymic[0] + '.' : ''}</td>
             <td><span class="badge-empl ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}">${empl.role}</span></td>
             <td class="text-muted">${empl.phone}</td>
-            <td class="fw-bold">${empl.salary} грн</td>
+            <td>${empl.salary} грн</td>
             <td class="text-end pe-4">
                 <button class="btn btn-sm p-1 me-2" onclick="viewEmployeeDetails(${empl.id})" title="Детальна інформація">
                     <i class="bi bi-info-circle icon-zlagoda fs-5"></i>
@@ -131,7 +131,7 @@ function renderCustomers(data) {
 
     tableBody.innerHTML = data.map(cust => `
         <tr>
-            <td class="ps-4 text-muted small fw-bold">${cust.card_number}</td>
+            <td class="ps-4 text-muted small">#${cust.card_number}</td>
             <td class="fw-semibold">${cust.surname} ${cust.name[0]}. ${cust.patronymic ? cust.patronymic[0] + '.' : ''}</td>
             <td class="text-muted">${cust.phone}</td>
             <td><span class="badge bg-success bg-opacity-10 text-success border border-success p-2 fs-6">${cust.percent}%</span></td>
