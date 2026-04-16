@@ -203,7 +203,15 @@ if (loginForm) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+const navbarFetch = fetch('man_navbar.html').then(res => res.text()).catch(() => '');
+const modalsFetch = fetch('../shared/modals.html').then(res => res.text()).catch(() => '');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const navPlaceholder = document.getElementById('navbar_placeholder');
+    if (navPlaceholder) navPlaceholder.innerHTML = await navbarFetch;
+
+    const modalsPlaceholder = document.getElementById('modals_placeholder');
+    if (modalsPlaceholder) modalsPlaceholder.innerHTML = await modalsFetch;
     displayUserName();
     updateGreeting();
 
@@ -354,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('emplRoleInput').value = btn.dataset.role;
         });
     });
+    document.body.classList.add('loaded');
 });
 
 //additional functions
@@ -393,6 +402,36 @@ function setupCategoryForm() {
         
         form.reset();
         document.getElementById('editCategoryId').value = "";
+    });
+}
+
+function setupProductForm() {
+    const form = document.getElementById('addProductForm');
+    if (!form) return;
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editProductId').value;
+        
+        const newProduct = {
+            id: editId ? parseInt(editId) : mockProducts.length + 101, // Тимчасова генерація ID
+            name: document.getElementById('productNameInput').value.trim(),
+            manufacturer: document.getElementById('productManufacturerInput').value.trim(),
+            chars: document.getElementById('productCharsInput').value.trim(),
+            category_id: parseInt(document.getElementById('categorySelectInput').value)
+        };
+
+        if (editId) {
+            const index = mockProducts.findIndex(p => p.id === parseInt(editId));
+            if (index !== -1) mockProducts[index] = newProduct;
+        } else {
+            mockProducts.push(newProduct);
+        }
+
+        renderProducts(mockProducts);
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('addProductModal')).hide();
+        form.reset();
+        document.getElementById('editProductId').value = "";
     });
 }
 
