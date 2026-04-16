@@ -24,6 +24,11 @@ const mockEmployees = [
         id: 12345, password: "123", surname: "Мельник", name: "Анна", patronymic: "Олексіївна",
         role: "Менеджер", salary: 35000, start_date: "2023-01-10", birth_date: "1990-05-14",
         phone: "+380951234567", city: "Київ", street: "вул. Хрещатик 15", zip: "02100"
+    },
+    {
+        id: 54321, password: "0000", surname: "Сидоренко", name: "Іван", patronymic: "Петрович",
+        role: "Касир", salary: 15000, start_date: "2023-03-05", birth_date: "1995-07-22",
+        phone: "+380671112233", city: "Київ", street: "Польова 12", zip: "03056"
     }
 ];
 
@@ -36,6 +41,17 @@ const mockCustomers = [
         card_number: "2", surname: "Іванов", name: "Петро", patronymic: "Олегович", 
         phone: "+380509998877", city: "", street: "", zip: "", percent: 10 
     }
+];
+
+const mockChecks = [
+    { check_number: "1", id_employee: 54321, card_number: "1", print_date: "2023-10-25 14:30", sum_total: 110.20, vat: 18.37 },
+    { check_number: "2", id_employee: 54321, card_number: "", print_date: "2023-10-25 15:45", sum_total: 45.50, vat: 7.58 }
+];
+
+const mockSales = [
+    { UPC: "123456789012", check_number: "1", product_number: 2, selling_price: 45.50 },
+    { UPC: "987654321098", check_number: "1", product_number: 1, selling_price: 25.00 },
+    { UPC: "123456789012", check_number: "2", product_number: 1, selling_price: 45.50 }
 ];
 
 //rendering
@@ -97,6 +113,32 @@ function renderStoreProducts(data) {
                 <td class="text-end pe-4">
                     <button class="btn btn-sm btn_edit me-2" onclick="prepareEditStoreProduct('${sp.upc}')">Редагувати</button>
                     <button class="btn btn-sm btn_delete" onclick="deleteStoreProduct('${sp.upc}')">Видалити</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderChecks(data) {
+    const tableBody = document.getElementById('checkTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = data.map(chk => {
+        const empl = mockEmployees.find(e => e.id === chk.id_employee);
+        const cashierName = empl ? `${empl.surname} ${empl.name[0]}.` : "Невідомий";
+
+        return `
+            <tr>
+                <td class="ps-4">#${chk.check_number}</td>
+                <td class="fw-semibold">${cashierName}</td>
+                <td class="text-muted small">${chk.print_date}</td>
+                <td>${chk.sum_total.toFixed(2)}</td>
+                <td class="text-muted">${chk.vat.toFixed(2)}</td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm p-1 me-2" onclick="viewCheckDetails('${chk.check_number}')" title="Деталі чека">
+                        <i class="bi bi-receipt icon-zlagoda fs-5"></i>
+                    </button>
+                    <button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')">Видалити</button>
                 </td>
             </tr>
         `;
@@ -181,14 +223,27 @@ if (loginForm) {
         submitBtn.disabled = true;
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        
         setTimeout(() => {
             const user = mockEmployees.find(e => e.id === enteredID && e.password === enteredPass);
 
             if (user) {
+                if (user.role !== 'Менеджер') {
+                    alertMessage.style.color = 'red';
+                    alertMessage.textContent = 'Недостатній рівень авторизації';
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                    return;
+                }
+
                 const initials = `${user.surname} ${user.name[0]}. ${user.patronymic ? user.patronymic[0] + '.' : ''}`.trim();
                 sessionStorage.setItem('userName', initials);
+                
+                sessionStorage.setItem('userRole', user.role_of_employee); 
+                
                 alertMessage.style.color = 'var(--primary-color)';
                 alertMessage.textContent = `Вітаємо, ${initials}!`;
+                
                 setTimeout(() => {
                     window.location.href = '../manager/home.html';
                 }, 1000);
@@ -233,6 +288,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         populateProductDropdown();
         setupSearch('storeProductSearch', mockStoreProducts, renderStoreProducts, 'upc');
         setupStoreProductForm();
+    }
+
+    if (document.getElementById('checkTableBody')) {
+        renderChecks(mockChecks);
+        setupSearch('checkSearch', mockChecks, renderChecks, 'check_number');
     }
 
     if (document.getElementById('employeeTableBody')) {
@@ -346,6 +406,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (index !== -1) {
                     mockStoreProducts.splice(index, 1);
                     renderStoreProducts(mockStoreProducts);
+                }
+            } else if (itemToDeleteType === 'check') {
+                const index = mockChecks.findIndex(c => c.check_number === itemToDeleteId);
+                if (index !== -1) {
+                    mockChecks.splice(index, 1);
+                    renderChecks(mockChecks);
                 }
             }
 
@@ -608,6 +674,13 @@ function deleteStoreProduct(upc) {
     modal.show();
 }
 
+function deleteCheck(checkNumber) {
+    itemToDeleteId = checkNumber;
+    itemToDeleteType = 'check';
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
+    modal.show();
+}
+
 function deleteEmployee(id) {
     itemToDeleteId = id;
     itemToDeleteType = 'employee';
@@ -729,6 +802,53 @@ function togglePasswordVisibility() {
         passInput.type = "password";
         icon.classList.replace('bi-eye-slash', 'bi-eye');
     }
+}
+
+function viewCheckDetails(checkNumber) {
+    const chk = mockChecks.find(c => c.check_number === checkNumber);
+    if (!chk) return;
+
+    const empl = mockEmployees.find(e => e.id === chk.id_employee);
+    document.getElementById('v-check-id').textContent = `Чек #${chk.check_number}`;
+    document.getElementById('v-check-cashier').textContent = empl ? `${empl.surname} ${empl.name}` : "Невідомий";
+    document.getElementById('v-check-date').textContent = chk.print_date;
+
+    const sales = mockSales.filter(s => s.check_number === checkNumber);
+    const tbody = document.getElementById('v-check-products');
+    
+    tbody.innerHTML = sales.map(sale => {
+        const storeProd = mockStoreProducts.find(sp => sp.upc === sale.UPC);
+        let productName = "Невідомий товар";
+        if (storeProd) {
+            const prod = mockProducts.find(p => p.id === storeProd.id_product);
+            if (prod) productName = prod.name;
+        }
+
+        const rowTotal = sale.product_number * sale.selling_price;
+        return `
+            <tr>
+                <td class="fw-semibold">${productName} <br><span class="text-muted small">UPC: ${sale.UPC}</span></td>
+                <td>${sale.product_number} шт.</td>
+                <td>${sale.selling_price.toFixed(2)}</td>
+                <td class="text-end fw-bold">${rowTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const cardEl = document.getElementById('v-check-card');
+    if (chk.card_number) {
+        const cust = mockCustomers.find(c => c.card_number === chk.card_number);
+        const percent = cust ? cust.percent : 0;
+        cardEl.textContent = `Картка: ${chk.card_number} (Знижка ${percent}%)`;
+        cardEl.style.display = 'inline-block';
+    } else {
+        cardEl.style.display = 'none';
+    }
+
+    document.getElementById('v-check-vat').textContent = chk.vat.toFixed(2);
+    document.getElementById('v-check-total').textContent = chk.sum_total.toFixed(2);
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('viewCheckModal')).show();
 }
 
 function viewEmployeeDetails(id) {
