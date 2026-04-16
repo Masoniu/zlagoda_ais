@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Менеджер - чеки</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="../../static/css/style.css" />
+  </head>
+  <body class="manager_layout">
+    <div id="navbar_placeholder"></div>
+
+    <main class="container mt-5">
+      <h2 class="mb-4 fw-bold">Історія продажів</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="input-group search-container">
+          <span class="input-group-text bg-white border-0 ps-3">
+            <i class="bi bi-search icon-zlagoda"></i>
+          </span>
+          <input
+            type="text"
+            id="checkSearch"
+            class="form-control border-0 shadow-none ps-2"
+            placeholder="Пошук за номером чека..."
+          />
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-4 mt-4">
+        <div class="card-body p-0">
+          <table class="table table-hover mb-0">
+            <thead class="zlagoda_table_header">
+              <tr>
+                <th class="ps-4">Номер чека</th>
+                <th>Касир</th>
+                <th>Дата і час</th>
+                <th>Сума</th>
+                <th>ПДВ</th>
+                <th class="text-end pe-4">Дії</th>
+              </tr>
+            </thead>
+            <tbody id="checkTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!--WINDOW FOR VIEWING CHECK-->
+    <div
+      class="modal fade"
+      id="viewCheckModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div
+            class="modal-header border-0 pb-0 badge-manager text-white rounded-top-4"
+          >
+            <h5 class="modal-title fw-bold p-3" id="v-check-id">Чек #...</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white me-3"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="row mb-3">
+              <div class="col-6">
+                <p class="mb-1 text-muted small">Касир</p>
+                <p class="fw-bold mb-0" id="v-check-cashier"></p>
+              </div>
+              <div class="col-6 text-end">
+                <p class="mb-1 text-muted small">Дата та час</p>
+                <p class="fw-bold mb-0" id="v-check-date"></p>
+              </div>
+            </div>
+
+            <h6 class="fw-bold mb-3 border-bottom pb-2 mt-4">Товари у чеку</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-borderless">
+                <thead class="border-bottom">
+                  <tr class="text-muted small">
+                    <th>Назва товару</th>
+                    <th>Кількість</th>
+                    <th>Ціна</th>
+                    <th class="text-end">Разом</th>
+                  </tr>
+                </thead>
+                <tbody id="v-check-products"></tbody>
+              </table>
+            </div>
+
+            <div
+              class="d-flex justify-content-between align-items-end mt-4 border-top pt-3"
+            >
+              <div>
+                <span
+                  class="badge bg-success bg-opacity-10 text-success border border-success p-2"
+                  id="v-check-card"
+                ></span>
+              </div>
+              <div class="text-end">
+                <p class="mb-1 text-muted small">
+                  В т.ч. ПДВ: <span id="v-check-vat"></span> грн
+                </p>
+                <h4 class="fw-bold mb-0 icon-zlagoda">
+                  Всього: <span id="v-check-total"></span> грн
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="modals_placeholder"></div>
+    <script src="../../static/js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
