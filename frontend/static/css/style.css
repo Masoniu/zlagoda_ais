@@ -288,3 +288,38 @@ body.loaded {
 .sortable-header:hover {
   color: var(--primary-color);
 }
+
+@media print {
+  #navbar-placeholder,
+  .search-container,
+  .btn,
+  .modal,
+  td:last-child,
+  th:last-child,
+  .bi-arrow-down-up {
+    display: none !important;
+  }
+
+  body {
+    background-color: white !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-bottom: 1px solid #000 !important;
+  }
+
+  .table th,
+  .table td {
+    border: 1px solid #000 !important;
+    padding: 4px 6px !important;
+    font-size: 12px !important;
+    color: black !important;
+  }
+}
