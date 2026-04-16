@@ -278,3 +278,13 @@ body {
 body.loaded {
   opacity: 1;
 }
+
+.sortable-header {
+  cursor: pointer;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+.sortable-header:hover {
+  color: var(--primary-color);
+}
