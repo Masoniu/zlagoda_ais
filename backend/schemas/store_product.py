@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 class StoreProductBase(BaseModel):
-    upc: str = Field(..., max_length=12)
+    UPC: str = Field(..., max_length=12)
     id_product: int
     selling_price: float
     products_number: int

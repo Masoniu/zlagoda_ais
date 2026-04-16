@@ -25,7 +25,7 @@ async def create_store_product(item: StoreProductCreate, db: AsyncSession = Depe
     if not prod_check.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Product ID does not exist in catalog")
     upc_check = await db.execute(
-        select(StoreProductModel).where(StoreProductModel.upc == item.upc)
+        select(StoreProductModel).where(StoreProductModel.UPC == item.UPC)
     )
     if upc_check.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Product with this UPC already exists")
@@ -39,7 +39,7 @@ async def create_store_product(item: StoreProductCreate, db: AsyncSession = Depe
 
 @router.delete("/{upc}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_store_product(upc: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(StoreProductModel).where(StoreProductModel.upc == upc))
+    result = await db.execute(select(StoreProductModel).where(StoreProductModel.UPC == upc))
     item = result.scalar_one_or_none()
 
     if not item:
