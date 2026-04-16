@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api import auth
+from backend.api import categories
 
 app = FastAPI(title="ZLAGODA AIS API")
 
@@ -13,6 +14,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 
 @app.get("/")
 async def root():
