@@ -370,3 +370,40 @@ body.cashier-mode button[data-bs-target="#addCustomerModal"] {
 body.cashier-mode .cashier-hide-col {
   display: none !important;
 }
+
+.sale,
+.total {
+  color: var(--secondary-color) !important;
+}
+
+.btn-success {
+  background-color: var(--primary-color) !important;
+  border: none !important;
+  color: white !important;
+}
+
+.btn-success:hover {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+}
+
+.btn-qty-pos {
+  border-color: var(--text-color) !important;
+  color: var(--text-color) !important;
+  transition: 0.2s;
+}
+
+.btn-qty-pos:hover {
+  background-color: var(--text-color) !important;
+  color: white !important;
+}
+
+.btn-delete-pos {
+  color: var(--text-color) !important;
+  transition: 0.2s;
+}
+
+.btn-delete-pos:hover {
+  opacity: 0.7;
+  transform: scale(1.1);
+}
