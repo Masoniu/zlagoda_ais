@@ -106,6 +106,53 @@ async def init_db():
                 );
             """)
 
+            #індекси для швидкого пошуку
+            await conn.execute("""
+                               CREATE INDEX IF NOT EXISTS idx_employee_surname ON employee(empl_surname);
+                               CREATE INDEX IF NOT EXISTS idx_product_name ON product(product_name);
+                               CREATE INDEX IF NOT EXISTS idx_category_name ON category(category_name);
+                               CREATE INDEX IF NOT EXISTS idx_customer_surname ON customer_card(cust_surname);
+                               """)
+
+            #представлення для залишків на складі
+            await conn.execute("""
+                            CREATE
+                            OR REPLACE VIEW view_store_inventory AS
+                            SELECT sp."UPC",
+                                    p.product_name,
+                                    p.characteristics,
+                                    sp.selling_price,
+                                    sp.products_number,
+                                    sp.promotional_product,
+                                    c.category_name
+                            FROM store_product sp
+                            JOIN product p ON sp.id_product = p.id_product
+                            JOIN category c ON p.category_number = c.category_number;
+                            """)
+
+            #тригер який віднімає товарв при продажі
+            await conn.execute("""
+                            CREATE OR REPLACE FUNCTION deduct_inventory()
+                            RETURNS TRIGGER AS $$
+                            BEGIN
+                               UPDATE store_product
+                               SET products_number = products_number - NEW.product_number
+                               WHERE "UPC" = NEW."UPC";
+
+                               RETURN NEW;
+                            END;
+                            $$ LANGUAGE plpgsql;
+                            """)
+
+            await conn.execute("""
+                            DROP TRIGGER IF EXISTS trigger_deduct_inventory ON sale;
+
+                            CREATE TRIGGER trigger_deduct_inventory
+                            AFTER INSERT ON sale
+                            FOR EACH ROW
+                            EXECUTE FUNCTION deduct_inventory();
+                        """)
+
         print("Базу даних ініціалізовано")
 
     except Exception as e:
