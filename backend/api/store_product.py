@@ -61,9 +61,14 @@ async def delete_store_product(
 ):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може видаляти товари")
+    try:
+        result = await conn.fetchval("DELETE FROM store_product WHERE upc = $1 RETURNING upc", upc)
+        if not result:
+            raise HTTPException(status_code=404, detail="Store product not found")
+        return None
 
-    result = await conn.fetchval("DELETE FROM store_product WHERE upc = $1 RETURNING upc", upc)
-
-    if not result:
-        raise HTTPException(status_code=404, detail="Store product not found")
-    return None
+    except asyncpg.exceptions.ForeignKeyViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неможливо видалити цей товар, оскільки він вже фігурує у створених чеках. Спочатку потрібно вилучити відповідні чеки."
+        )
