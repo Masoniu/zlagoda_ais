@@ -1,22 +1,23 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import DeclarativeBase
+import asyncpg
 import os
 from dotenv import load_dotenv
+from fastapi import Request
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-print(f"DEBUG: Connecting to {DATABASE_URL}") #DELETE LATER
-if DATABASE_URL is None:
-    raise ValueError("DATABASE_URL not found in environment variables!")
-engine = create_async_engine(DATABASE_URL, echo=True)
-SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-class Base(DeclarativeBase):
-    pass
+async def create_db_pool():
+    pool = await asyncpg.create_pool(
+        DATABASE_URL,
+        min_size=5, #скільки з'єднань тримати відкритими завжди
+        max_size=20 #скільки максимум можна відкрити при великому навантаженні
+    )
+    return pool
 
-async def get_db():
-    async with SessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+async def get_db_conn(request: Request):
+    """
+    Дістає одне вільне з'єднання з пулу для конкретного запиту
+    і автоматично повертає його назад після завершення.
+    """
+    async with request.app.state.pool.acquire() as connection:
+        yield connection

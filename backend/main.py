@@ -6,8 +6,18 @@ from backend.api.products import router as products_router
 from backend.api.store_product import router as store_products_router
 from backend.api.customer_cards import router as customer_cards_router
 from backend.api.checks import router as checks_router
-#uvicorn backend.main:app --reload
-app = FastAPI(title="ZLAGODA AIS API")
+from contextlib import asynccontextmanager
+from backend.core.database import create_db_pool
+# uvicorn backend.main:app --reload
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.pool = await create_db_pool()
+    print("Пул з'єднань asyncpg ініціалізовано")
+    yield
+    await app.state.pool.close()
+    print("Пул з'єднань asyncpg закрито")
+app = FastAPI(title="ZLAGODA AIS API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

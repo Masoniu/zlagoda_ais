@@ -1,16 +1,16 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+import asyncpg
 
-from backend.core.database import get_db
+from backend.core.database import get_db_conn
 from backend.core.security import SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+
 async def get_current_user(
-        db: AsyncSession = Depends(get_db),
+        conn: asyncpg.Connection = Depends(get_db_conn),
         token: str = Depends(oauth2_scheme)
 ):
     credentials_exception = HTTPException(
@@ -18,6 +18,7 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
@@ -26,10 +27,9 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    query = text("SELECT * FROM employee WHERE id_employee = :user_id")
-    result = await db.execute(query, {"user_id": user_id})
-    user = result.mappings().first()
+    user = await conn.fetchrow("SELECT * FROM employee WHERE id_employee = $1", user_id)
 
     if user is None:
         raise credentials_exception
-    return user
+
+    return dict(user)
