@@ -262,14 +262,14 @@ function populateProductDropdown() {
     });
 }
 
-//main logic
 
 const loginForm = document.getElementById('loginForm');
+const API_BASE_URL = 'http://127.0.0.1:8000';
 if (loginForm) {
-    loginForm.addEventListener('submit', function(event) {
+    loginForm.addEventListener('submit', async function(event) {
         event.preventDefault();
-        
-        const enteredID = parseInt(document.getElementById('loginInput').value);
+
+        const enteredID = document.getElementById('loginInput').value;
         const enteredPass = document.getElementById('passwordInput').value;
         const alertMessage = document.getElementById('alertMessage');
         const submitBtn = loginForm.querySelector('button[type="submit"]');
@@ -278,33 +278,54 @@ if (loginForm) {
         submitBtn.disabled = true;
         const originalBtnText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-        
-        setTimeout(() => {
-            const user = mockEmployees.find(e => e.id === enteredID && e.password === enteredPass);
 
-            if (user) {
-                const initials = `${user.surname} ${user.name[0]}. ${user.patronymic ? user.patronymic[0] + '.' : ''}`.trim();
-                sessionStorage.setItem('userName', initials);
-                sessionStorage.setItem('userRole', user.role); 
-                sessionStorage.setItem('userId', user.id);
-                alertMessage.style.color = 'var(--primary_color)';
-                alertMessage.textContent = `Вітаємо, ${initials}!`;
+        try {
+            const formData = new URLSearchParams();
+            formData.append('username', enteredID);
+            formData.append('password', enteredPass);
 
-                setTimeout(() => {
-                    if (user.role === 'Менеджер') {
-                        window.location.href = '../manager/home.html';
-                    } else if (user.role === 'Касир') {
-                        window.location.href = '../cashier/home.html';
-                    }
-                }, 1000);
+            const loginResponse = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
 
-            } else {
-                alertMessage.style.color = 'red';
-                alertMessage.textContent = 'Невірний ID або пароль';
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
+            if (!loginResponse.ok) {
+                throw new Error('Невірний логін або пароль');
             }
-        }, 800);
+
+            const tokenData = await loginResponse.json();
+            const token = tokenData.access_token;
+            sessionStorage.setItem('token', token);
+            const meResponse = await fetch(`${API_BASE_URL}/employees/me`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!meResponse.ok) throw new Error('Помилка завантаження профілю');
+
+            const meData = await meResponse.json();
+            const initials = `${meData.empl_surname} ${meData.empl_name[0]}. ${meData.empl_patronymic ? meData.empl_patronymic[0] + '.' : ''}`.trim();
+            sessionStorage.setItem('userName', initials);
+            sessionStorage.setItem('userRole', meData.empl_role);
+            sessionStorage.setItem('userId', meData.id_employee);
+
+            alertMessage.style.color = 'var(--primary-color)';
+            alertMessage.textContent = `Вітаємо, ${initials}!`;
+            setTimeout(() => {
+                if (meData.empl_role === 'Менеджер') {
+                    window.location.href = '../manager/home.html';
+                } else {
+                    window.location.href = '../cashier/home.html';
+                }
+            }, 500);
+
+        } catch (error) {
+            alertMessage.style.color = 'red';
+            alertMessage.textContent = error.message;
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
     });
 }
 
