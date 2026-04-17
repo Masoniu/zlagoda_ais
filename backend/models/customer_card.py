@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer
+from sqlalchemy import String, Integer, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from backend.core.database import Base
 
@@ -13,3 +13,6 @@ class CustomerCard(Base):
     street: Mapped[str] = mapped_column(String(50), nullable=True)
     zip_code: Mapped[str] = mapped_column(String(9), nullable=True)
     percent: Mapped[int] = mapped_column(Integer, nullable=False)
+    __table_args__ = (
+        CheckConstraint('percent >= 0 AND percent <= 100', name='check_cust_percent_range'),
+    )

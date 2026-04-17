@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, Numeric, Boolean, ForeignKey
+from sqlalchemy import String, Integer, Numeric, Boolean, ForeignKey, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from typing import Optional
 from backend.core.database import Base
@@ -19,3 +19,7 @@ class StoreProduct(Base):
     selling_price: Mapped[float] = mapped_column(Numeric(13, 4), nullable=False)
     products_number: Mapped[int] = mapped_column(Integer, nullable=False)
     promotional_product: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    __table_args__ = (
+        CheckConstraint('selling_price > 0', name='check_sp_price_positive'),
+        CheckConstraint('products_number >= 0', name='check_sp_qty_positive'),
+    )

@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, Numeric, ForeignKey
+from sqlalchemy import String, Integer, Numeric, ForeignKey, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from backend.core.database import Base
 
@@ -16,3 +16,7 @@ class Sale(Base):
     )
     product_number: Mapped[int] = mapped_column(Integer, nullable=False)
     selling_price: Mapped[float] = mapped_column(Numeric(13, 4), nullable=False)
+    __table_args__ = (
+        CheckConstraint('product_number > 0', name='check_sale_qty_positive'),
+        CheckConstraint('selling_price >= 0', name='check_sale_price_positive'),
+    )
