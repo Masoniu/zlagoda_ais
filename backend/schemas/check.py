@@ -19,6 +19,3 @@ class CheckResponse(BaseModel):
     print_date: datetime
     sum_total: Decimal
     vat: Decimal
-
-    class Config:
-        from_attributes = True
