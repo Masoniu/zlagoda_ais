@@ -1,25 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from backend.schemas.employee import EmployeeLogin
-from backend.core.database import SessionLocal
+import asyncpg
+
+from backend.core.database import get_db_conn
 from backend.services.auth import authenticate_user
 from backend.core.security import create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
 
-
 router = APIRouter(tags=["Authentication"])
-
-async def get_db():
-    async with SessionLocal() as session:
-        yield session
-
 
 @router.post("/login")
 async def login(
         form_data: OAuth2PasswordRequestForm = Depends(),
-        db: AsyncSession = Depends(get_db)
+        conn: asyncpg.Connection = Depends(get_db_conn)
 ):
-    user = await authenticate_user(db, form_data.username, form_data.password)
+    user = await authenticate_user(conn, form_data.username, form_data.password)
 
     if not user:
         raise HTTPException(
@@ -28,10 +22,10 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = create_access_token(data={"sub": user.id_employee})
+    token = create_access_token(data={"sub": str(user["id_employee"])})
 
     return {
         "access_token": token,
         "token_type": "bearer",
-        "role": user.empl_role
+        "role": user["empl_role"]
     }
