@@ -1,240 +1,233 @@
 import asyncio
-from datetime import date, datetime, timedelta
-import random
+import asyncpg
 import os
-import sys
+from datetime import date, datetime, timedelta
+from dotenv import load_dotenv
 
-# Налаштування шляхів для імпорту моделей
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-from backend.core.database import SessionLocal
-from backend.models.employee import Employee
-from backend.models.category import Category
-from backend.models.product import Product
-from backend.models.customer_card import CustomerCard
-from backend.models.store_product import StoreProduct
-from backend.models.check import Check
-from backend.models.sale import Sale
-from sqlalchemy import text
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 async def seed_data():
-    async with SessionLocal() as session:
-        try:
-            print("🔄 Очищення старих даних та оновлення бази...")
-            await session.execute(text("""
-                TRUNCATE category, employee, customer_card, product, 
-                         store_product, "check", sale 
-                RESTART IDENTITY CASCADE;
-            """))
+    conn = await asyncpg.connect(DATABASE_URL)
 
-            print("📦 Наповнення оновленими даними...")
+    try:
+        print("Очищення старих даних...")
+        await conn.execute("""
+            TRUNCATE category, employee, customer_card, product, 
+                     store_product, "check", sale 
+            RESTART IDENTITY CASCADE;
+        """)
 
-            # 1. КАТЕГОРІЇ
-            categories_data = [
-                (1, "Молочні продукти"), (2, "М'ясні вироби"),
-                (3, "Овочі та фрукти"), (4, "Напої"),
-                (5, "Бакалія"), (6, "Кондитерські вироби"),
-                (7, "Побутова хімія"), (8, "Хлібобулочні вироби"),
-                (9, "Заморожені продукти"), (10, "Риба та морепродукти"),
-                (11, "Соуси та приправи"), (12, "Дитячі товари"),
-                (13, "Зоотовари"), (14, "Канцелярські товари"),
-                (15, "Тютюнові вироби"), (16, "Алкогольні напої")
-            ]
-            categories = [Category(category_number=id, category_name=name) for id, name in categories_data]
-            session.add_all(categories)
-            await session.flush()
+        print("Наповнення бази...")
 
-            # 2. ПРАЦІВНИКИ
-            hash_123 = "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQqiRQYq"  # пароль "123"
-            employees = [
-                Employee(id_employee="12345", password_hash=hash_123, empl_surname="Мельник", empl_name="Анна",
-                         empl_patronymic="Олексіївна", empl_role="Менеджер", salary=45000,
-                         date_of_start=date(2023, 5, 20), date_of_birth=date(1990, 5, 14), phone_number="+380951234567",
-                         city="Київ", street="вул. Хрещатик 15", zip_code="02100"),
-                Employee(id_employee="1", password_hash=hash_123, empl_surname="Ткаченко", empl_name="Максим",
-                         empl_patronymic="Петрович", empl_role="Менеджер", salary=45000,
-                         date_of_start=date(2024, 2, 14), date_of_birth=date(1988, 11, 22), phone_number="+380957654321",
-                         city="Київ", street="вул. Володимирська 42", zip_code="02100"),
-                Employee(id_employee="2", password_hash=hash_123, empl_surname="Коваленко", empl_name="Роман",
-                         empl_patronymic="Сергійович", empl_role="Менеджер", salary=45000,
-                         date_of_start=date(2025, 3, 7), date_of_birth=date(1993, 3, 18), phone_number="+380689876543",
-                         city="Київ", street="вул. Велика Васильківська 28", zip_code="02100"),
-                Employee(id_employee="54321", password_hash=hash_123, empl_surname="Сидоренко", empl_name="Іван",
-                         empl_patronymic="Петрович", empl_role="Касир", salary=18000, date_of_start=date(2023, 3, 5),
-                         date_of_birth=date(1995, 7, 22), phone_number="+380671112233", city="Київ",
-                         street="Польова 12", zip_code="03056"),
-                Employee(id_employee="11223", password_hash=hash_123, empl_surname="Коваль", empl_name="Марія",
-                         empl_patronymic="Олегівна", empl_role="Касир", salary=17500, date_of_start=date(2023, 6, 15),
-                         date_of_birth=date(1998, 11, 30), phone_number="+380503334455", city="Київ",
-                         street="Харківське шосе 5", zip_code="02000"),
-                Employee(id_employee="33445", password_hash=hash_123, empl_surname="Петренко", empl_name="Олександр",
-                         empl_patronymic="Сергійович", empl_role="Касир", salary=17000, date_of_start=date(2024, 1, 10),
-                         date_of_birth=date(2000, 4, 1), phone_number="+380971234567", city="Львів",
-                         street="Шевченка 10", zip_code="79000"),
-                Employee(id_employee="66778", password_hash=hash_123, empl_surname="Іванова", empl_name="Наталія",
-                         empl_patronymic="Вікторівна", empl_role="Касир", salary=18500, date_of_start=date(2023, 9, 1),
-                         date_of_birth=date(1992, 8, 15), phone_number="+380669876543", city="Одеса",
-                         street="Дерибасівська 5", zip_code="65000"),
-                Employee(id_employee="99001", password_hash=hash_123, empl_surname="Кравченко", empl_name="Віталій",
-                         empl_patronymic="Миколайович", empl_role="Менеджер", salary=46000,
-                         date_of_start=date(2022, 11, 11), date_of_birth=date(1985, 3, 20), phone_number="+380675554433",
-                         city="Харків", street="Сумська 20", zip_code="61000"),
-                Employee(id_employee="10112", password_hash=hash_123, empl_surname="Мороз", empl_name="Ольга",
-                         empl_patronymic="Ігорівна", empl_role="Касир", salary=17800, date_of_start=date(2024, 3, 1),
-                         date_of_birth=date(1999, 6, 25), phone_number="+380501112233", city="Дніпро",
-                         street="Центральна 1", zip_code="49000"),
-                Employee(id_employee="13141", password_hash=hash_123, empl_surname="Григоренко", empl_name="Андрій",
-                         empl_patronymic="Васильович", empl_role="Касир", salary=17200, date_of_start=date(2023, 7, 7),
-                         date_of_birth=date(1997, 1, 1), phone_number="+380937778899", city="Запоріжжя",
-                         street="Соборний 15", zip_code="69000"),
-                Employee(id_employee="15161", password_hash=hash_123, empl_surname="Лисенко", empl_name="Тетяна",
-                         empl_patronymic="Сергіївна", empl_role="Касир", salary=18000, date_of_start=date(2024, 2, 20),
-                         date_of_birth=date(2001, 10, 10), phone_number="+380965556677", city="Полтава",
-                         street="Європейська 30", zip_code="36000"),
-                Employee(id_employee="17181", password_hash=hash_123, empl_surname="Бондаренко", empl_name="Сергій",
-                         empl_patronymic="Петрович", empl_role="Менеджер", salary=47000,
-                         date_of_start=date(2021, 10, 1), date_of_birth=date(1980, 12, 5), phone_number="+380671239876",
-                         city="Чернігів", street="Миру 45", zip_code="14000"),
-                Employee(id_employee="19202", password_hash=hash_123, empl_surname="Шевченко", empl_name="Ірина",
-                         empl_patronymic="Олександрівна", empl_role="Касир", salary=17900, date_of_start=date(2023, 4, 1),
-                         date_of_birth=date(1996, 7, 7), phone_number="+380504445566", city="Суми",
-                         street="Воскресенська 10", zip_code="40000")
-            ]
-            session.add_all(employees)
+        #категорії
+        categories_data = [
+            (1, "Молочні продукти"), (2, "М'ясні вироби"),
+            (3, "Овочі та фрукти"), (4, "Напої"),
+            (5, "Бакалія"), (6, "Кондитерські вироби"),
+            (7, "Побутова хімія"), (8, "Хлібобулочні вироби"),
+            (9, "Заморожені продукти"), (10, "Риба та морепродукти"),
+            (11, "Соуси та приправи"), (12, "Дитячі товари"),
+            (13, "Зоотовари"), (14, "Канцелярські товари"),
+            (15, "Тютюнові вироби"), (16, "Алкогольні напої")
+        ]
+        await conn.executemany("""
+                               INSERT INTO category (category_number, category_name)
+                               VALUES ($1, $2)
+                               """, categories_data)
 
-            # 3. КЛІЄНТСЬКІ КАРТКИ
-            customers = [
-                CustomerCard(card_number="0000000000001", cust_surname="Коваленко", cust_name="Олена",
-                             cust_patronymic="Іванівна", phone_number="+380671112233", city="Київ", street="Польова 12",
-                             zip_code="03056", percent=5),
-                CustomerCard(card_number="0000000000002", cust_surname="Іванов", cust_name="Петро",
-                             cust_patronymic="Олегович", phone_number="+380509998877", city="Київ",
-                             street="Межигірська 10", zip_code="04071", percent=10),
-                CustomerCard(card_number="0000000000003", cust_surname="Мельник", cust_name="Світлана",
-                             cust_patronymic=None, phone_number="+380630001122", city="Бориспіль",
-                             street="Київський шлях 2", zip_code="08301", percent=3),
-                CustomerCard(card_number="0000000000004", cust_surname="Ткаченко", cust_name="Андрій",
-                             cust_patronymic="Васильович", phone_number="+380981112233", city="Львів",
-                             street="Франка 5", zip_code="79005", percent=7),
-                CustomerCard(card_number="0000000000005", cust_surname="Савченко", cust_name="Марина",
-                             cust_patronymic="Сергіївна", phone_number="+380675554433", city="Одеса",
-                             street="Пушкінська 15", zip_code="65010", percent=5),
-                CustomerCard(card_number="0000000000006", cust_surname="Литвиненко", cust_name="Дмитро",
-                             cust_patronymic="Ігорович", phone_number="+380506667788", city="Харків",
-                             street="Наукова 3", zip_code="61001", percent=10),
-                CustomerCard(card_number="0000000000007", cust_surname="Поліщук", cust_name="Надія",
-                             cust_patronymic="Петрівна", phone_number="+380931234567", city="Дніпро",
-                             street="Гагаріна 20", zip_code="49002", percent=3),
-                CustomerCard(card_number="0000000000008", cust_surname="Василенко", cust_name="Віктор",
-                             cust_patronymic="Сергійович", phone_number="+380967778899", city="Запоріжжя",
-                             street="Перемоги 10", zip_code="69003", percent=7),
-                CustomerCard(card_number="0000000000009", cust_surname="Олійник", cust_name="Ірина",
-                             cust_patronymic="Миколаївна", phone_number="+380681112233", city="Полтава",
-                             street="Соборності 50", zip_code="36004", percent=5),
-                CustomerCard(card_number="0000000000010", cust_surname="Ковальчук", cust_name="Олег",
-                             cust_patronymic="Володимирович", phone_number="+380952223344", city="Чернігів",
-                             street="Рокоссовського 1", zip_code="14005", percent=10),
-                CustomerCard(card_number="0000000000011", cust_surname="Бондар", cust_name="Юлія",
-                             cust_patronymic="Анатоліївна", phone_number="+380633334455", city="Суми",
-                             street="Козацький Вал 7", zip_code="40006", percent=3),
-                CustomerCard(card_number="0000000000012", cust_surname="Гнатюк", cust_name="Роман",
-                             cust_patronymic="Степанович", phone_number="+380974445566", city="Вінниця",
-                             street="Соборна 25", zip_code="21000", percent=7)
-            ]
-            session.add_all(customers)
-            await session.flush()
+        #працівники
+        hash_123 = "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQqiRQYq"
+        employees_data = [
+            ('12345', hash_123, 'Мельник', 'Анна', 'Олексіївна', 'Менеджер', 45000.00, date(1990, 5, 14),
+             date(2023, 5, 20), '+380951234567', 'Київ', 'вул. Хрещатик 15', '02100'),
+            ('1', hash_123, 'Ткаченко', 'Максим', 'Петрович', 'Менеджер', 45000.00, date(1988, 11, 22),
+             date(2024, 2, 14), '+380957654321', 'Київ', 'вул. Володимирська 42', '02100'),
+            ('2', hash_123, 'Коваленко', 'Роман', 'Сергійович', 'Менеджер', 45000.00, date(1993, 3, 18),
+             date(2025, 3, 7), '+380689876543', 'Київ', 'вул. Велика Васильківська 28', '02100'),
+            ('54321', hash_123, 'Сидоренко', 'Іван', 'Петрович', 'Касир', 18000.00, date(1995, 7, 22), date(2023, 3, 5),
+             '+380671112233', 'Київ', 'Польова 12', '03056'),
+            ('11223', hash_123, 'Коваль', 'Марія', 'Олегівна', 'Касир', 17500.00, date(1998, 11, 30), date(2023, 6, 15),
+             '+380503334455', 'Київ', 'Харківське шосе 5', '02000'),
+            ('33445', hash_123, 'Петренко', 'Олександр', 'Сергійович', 'Касир', 17000.00, date(2000, 4, 1),
+             date(2024, 1, 10), '+380971234567', 'Львів', 'Шевченка 10', '79000'),
+            ('66778', hash_123, 'Іванова', 'Наталія', 'Вікторівна', 'Касир', 18500.00, date(1992, 8, 15),
+             date(2023, 9, 1), '+380669876543', 'Одеса', 'Дерибасівська 5', '65000'),
+            ('99001', hash_123, 'Кравченко', 'Віталій', 'Миколайович', 'Менеджер', 46000.00, date(1985, 3, 20),
+             date(2022, 11, 11), '+380675554433', 'Харків', 'Сумська 20', '61000'),
+            ('10112', hash_123, 'Мороз', 'Ольга', 'Ігорівна', 'Касир', 17800.00, date(1999, 6, 25), date(2024, 3, 1),
+             '+380501112233', 'Дніпро', 'Центральна 1', '49000'),
+            ('13141', hash_123, 'Григоренко', 'Андрій', 'Васильович', 'Касир', 17200.00, date(1997, 1, 1),
+             date(2023, 7, 7), '+380937778899', 'Запоріжжя', 'Соборний 15', '69000'),
+            ('15161', hash_123, 'Лисенко', 'Тетяна', 'Сергіївна', 'Касир', 18000.00, date(2001, 10, 10),
+             date(2024, 2, 20), '+380965556677', 'Полтава', 'Європейська 30', '36000'),
+            ('17181', hash_123, 'Бондаренко', 'Сергій', 'Петрович', 'Менеджер', 47000.00, date(1980, 12, 5),
+             date(2021, 10, 1), '+380671239876', 'Чернігів', 'Миру 45', '14000'),
+            ('19202', hash_123, 'Шевченко', 'Ірина', 'Олександрівна', 'Касир', 17900.00, date(1996, 7, 7),
+             date(2023, 4, 1), '+380504445566', 'Суми', 'Воскресенська 10', '40000')
+        ]
+        await conn.executemany("""
+                               INSERT INTO employee (id_employee, password_hash, empl_surname, empl_name,
+                                                     empl_patronymic,
+                                                     empl_role, salary, date_of_birth, date_of_start, phone_number,
+                                                     city, street, zip_code)
+                               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                               """, employees_data)
 
-            # 4. ТОВАРИ (Довідник)
-            products_list = [
-                (201, 1, "Йогурт питний", "Danone, 290г"), (202, 1, "Сир кисломолочний", "President, 9%"),
-                (203, 2, "Ковбаса лікарська", "Алан, вищий гатунок"), (204, 2, "Сосиски молочні", "Ятрань"),
-                (205, 3, "Банани", "Еквадор, стиглі"), (206, 3, "Картопля", "Україна, відбірна"),
-                (207, 4, "Вода Моршинська", "0.5л, негазована"), (208, 4, "Сік апельсиновий", "Sandora, 1л"),
-                (209, 5, "Рис пропарений", "Хуторок, 1кг"), (210, 5, "Макарони", "Barilla Penne"),
-                (211, 6, "Торт Грильяжний", "БКК, 450г"), (212, 6, "Цукерки Ромашка", "Roshen, 200г"),
-                (213, 7, "Порошок Tide", "Автомат, 3кг"), (214, 7, "Мило рідке", "Dove, 250мл"),
-                (215, 8, "Батон Київський", "Київхліб"), (216, 8, "Круасан з шоколадом", "Власний цех"),
-                (217, 1, "Молоко", "Простоквашино, 2.5%, 900мл"),
-                (218, 2, "Шинка", "М'ясна гільдія, нарізка"),
-                (219, 3, "Яблука", "Гала, 1кг"),
-                (220, 4, "Кока-Кола", "1.5л"),
-                (221, 5, "Гречка", "Жменька, 800г"),
-                (222, 6, "Шоколад чорний", "Світоч, 100г"),
-                (223, 7, "Засіб для миття посуду", "Fairy, 500мл"),
-                (224, 8, "Хліб пшеничний", "Формовий"),
-                (225, 9, "Морозиво", "Рудь, пломбір, 400г"),
-                (226, 10, "Філе хека", "Заморожене, 500г"),
-                (227, 11, "Кетчуп", "Чумак, томатний, 300г"),
-                (228, 12, "Пюре фруктове", "Gerber, яблуко, 125г"),
-                (229, 13, "Корм для котів", "Whiskas, курка, 400г"),
-                (230, 14, "Зошит", "Шкільний, 48 аркушів"),
-                (231, 1, "Кефір", "Яготинське, 1%, 900мл"),
-                (232, 2, "Сардельки", "Глобино, вищий гатунок"),
-                (233, 3, "Помідори", "Червоні, 1кг"),
-                (234, 4, "Мінеральна вода", "Боржомі, 0.75л"),
-                (235, 5, "Цукор", "Пісок, 1кг"),
-                (236, 6, "Печиво", "Марія, 200г"),
-                (237, 7, "Пральний порошок", "Persil, 1.5кг"),
-                (238, 8, "Булочка з маком", "Свіжа випічка"),
-                (239, 9, "Вареники з картоплею", "Легко, 1кг"),
-                (240, 10, "Оселедець", "Солоний, 500г")
-            ]
-            products = [Product(id_product=id, category_number=cat, product_name=name, characteristics=chars) for
-                        id, cat, name, chars in products_list]
-            session.add_all(products)
-            await session.flush()
+        #список id_employee касирів для чеків
+        cashier_ids = [e[0] for e in employees_data if e[5] == "Касир"]
 
-            # 5. ТОВАРИ В МАГАЗИНІ (UPC)
-            upcs = []
-            for p in products:
-                # Додаємо звичайний товар
-                upc_reg = f"{p.id_product:03d}000000000"[:12] # Ensure UPC is 12 chars, pad with zeros
-                sp_reg = StoreProduct(UPC=upc_reg, id_product=p.id_product, selling_price=random.uniform(20, 300),
-                                      products_number=random.randint(20, 100), promotional_product=False)
-                session.add(sp_reg)
-                upcs.append((upc_reg, sp_reg.selling_price))
+        #клієнтські картки
+        customers_data = [
+            ('0000000000001', 'Коваленко', 'Олена', 'Іванівна', '+380671112233', 'Київ', 'Польова 12', '03056', 5),
+            ('0000000000002', 'Іванов', 'Петро', 'Олегович', '+380509998877', 'Київ', 'Межигірська 10', '04071', 10),
+            ('0000000000003', 'Мельник', 'Світлана', None, '+380630001122', 'Бориспіль', 'Київський шлях 2', '08301',
+             3),
+            ('0000000000004', 'Ткаченко', 'Андрій', 'Васильович', '+380981112233', 'Львів', 'Франка 5', '79005', 7),
+            ('0000000000005', 'Савченко', 'Марина', 'Сергіївна', '+380675554433', 'Одеса', 'Пушкінська 15', '65010', 5),
+            ('0000000000006', 'Литвиненко', 'Дмитро', 'Ігорович', '+380506667788', 'Харків', 'Наукова 3', '61001', 10),
+            ('0000000000007', 'Поліщук', 'Надія', 'Петрівна', '+380931234567', 'Дніпро', 'Гагаріна 20', '49002', 3),
+            ('0000000000008', 'Василенко', 'Віктор', 'Сергійович', '+380967778899', 'Запоріжжя', 'Перемоги 10',
+             '69003', 7),
+            ('0000000000009', 'Олійник', 'Ірина', 'Миколаївна', '+380681112233', 'Полтава', 'Соборності 50', '36004',
+             5),
+            ('0000000000010', 'Ковальчук', 'Олег', 'Володимирович', '+380952223344', 'Чернігів', 'Рокоссовського 1',
+             '14005', 10),
+            ('0000000000011', 'Бондар', 'Юлія', 'Анатоліївна', '+380633334455', 'Суми', 'Козацький Вал 7', '40006', 3),
+            ('0000000000012', 'Гнатюк', 'Роман', 'Степанович', '+380974445566', 'Вінниця', 'Соборна 25', '21000', 7)
+        ]
+        await conn.executemany("""
+                               INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic,
+                                                          phone_number, city, street, zip_code, percent)
+                               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                               """, customers_data)
 
-                # Кожен третій товар робимо акційним
-                if p.id_product % 3 == 0:
-                    upc_prom = f"{p.id_product:03d}777777777"[:12] # Ensure UPC is 12 chars, pad with zeros
-                    sp_prom = StoreProduct(UPC=upc_prom, UPC_prom=upc_reg, id_product=p.id_product,
-                                           selling_price=sp_reg.selling_price * 0.8,
-                                           products_number=random.randint(5, 30), promotional_product=True)
-                    session.add(sp_prom)
-                    upcs.append((upc_prom, sp_prom.selling_price))
+        #список card_number клієнтів для чеків
+        customer_card_numbers = [c[0] for c in customers_data]
 
-            await session.flush()
+        #товари
+        products_data = [
+            (201, 1, "Йогурт питний", "Danone", "290г"), (202, 1, "Сир кисломолочний", "President", "9%"),
+            (203, 2, "Ковбаса лікарська", "Алан", "вищий гатунок"), (204, 2, "Сосиски молочні", "Ятрань", ""),
+            (205, 3, "Банани", "Еквадор", "стиглі"), (206, 3, "Картопля", "Україна", "відбірна"),
+            (207, 4, "Вода Моршинська", "Моршинська", "0.5л, негазована"),
+            (208, 4, "Сік апельсиновий", "Sandora", "1л"),
+            (209, 5, "Рис пропарений", "Хуторок", "1кг"), (210, 5, "Макарони", "Barilla", "Penne"),
+            (211, 6, "Торт Грильяжний", "БКК", "450г"), (212, 6, "Цукерки Ромашка", "Roshen", "200г"),
+            (213, 7, "Порошок Tide", "Procter & Gamble", "Автомат, 3кг"), (214, 7, "Мило рідке", "Dove", "250мл"),
+            (215, 8, "Батон Київський", "Київхліб", ""), (216, 8, "Круасан з шоколадом", "Власний цех", ""),
+            (217, 1, "Молоко", "Простоквашино", "2.5%, 900мл"),
+            (218, 2, "Шинка", "М'ясна гільдія", "нарізка"),
+            (219, 3, "Яблука", "Україна", "Гала, 1кг"),
+            (220, 4, "Кока-Кола", "Coca-Cola Company", "1.5л"),
+            (221, 5, "Гречка", "Жменька", "800г"),
+            (222, 6, "Шоколад чорний", "Світоч", "100г"),
+            (223, 7, "Засіб для миття посуду", "Fairy", "500мл"),
+            (224, 8, "Хліб пшеничний", "Київхліб", "Формовий"),
+            (225, 9, "Морозиво", "Рудь", "пломбір, 400г"),
+            (226, 10, "Філе хека", "Аквамарин", "Заморожене, 500г"),
+            (227, 11, "Кетчуп", "Чумак", "томатний, 300г"),
+            (228, 12, "Пюре фруктове", "Gerber", "яблуко, 125г"),
+            (229, 13, "Корм для котів", "Whiskas", "курка, 400г"),
+            (230, 14, "Зошит", "Школярик", "Шкільний, 48 аркушів"),
+            (231, 1, "Кефір", "Яготинське", "1%, 900мл"),
+            (232, 2, "Сардельки", "Глобино", "вищий гатунок"),
+            (233, 3, "Помідори", "Україна", "Червоні, 1кг"),
+            (234, 4, "Мінеральна вода", "Боржомі", "0.75л"),
+            (235, 5, "Цукор", "Цукорок", "Пісок, 1кг"),
+            (236, 6, "Печиво", "Roshen", "Марія, 200г"),
+            (237, 7, "Пральний порошок", "Persil", "1.5кг"),
+            (238, 8, "Булочка з маком", "Власний цех", "Свіжа випічка"),
+            (239, 9, "Вареники з картоплею", "Легко", "1кг"),
+            (240, 10, "Оселедець", "Рибний світ", "Солоний, 500г")
+        ]
+        await conn.executemany("""
+                               INSERT INTO product (id_product, category_number, product_name, manufacturer,
+                                                    characteristics)
+                               VALUES ($1, $2, $3, $4, $5)
+                               """, products_data)
 
-            # 6. ЧЕКИ ТА ПРОДАЖІ (Створюємо історію за останні 30 днів)
-            for i in range(1, 50): # Збільшено кількість чеків
-                check_id = str(i)
-                empl = random.choice([e for e in employees if e.empl_role == "Касир"])  # тільки касири
-                cust = random.choice(customers + [None])  # може бути без карти
-                p_date = datetime.now() - timedelta(days=random.randint(0, 30), hours=random.randint(0, 23), minutes=random.randint(0, 59))
+        #товари в магазині (UPC)
+        store_products_data = []
+        upcs_for_sales = []
+        upc_counter = 0
 
-                # Створюємо продажі для цього чека
-                check_sum = 0
-                num_items = random.randint(1, 7) # Збільшено кількість товарів у чеку
-                selected_upcs = random.sample(upcs, min(num_items, len(upcs))) # Запобігаємо помилці, якщо товарів менше
+        for p_id, _, _, _, _ in products_data:
+            upc_counter += 1
+            upc_reg = f"{p_id:03d}{upc_counter:09d}"[:12]
+            selling_price_reg = round(50.0 + p_id * 0.75, 2)
+            store_products_data.append((upc_reg, None, p_id, selling_price_reg, 50, False))
+            upcs_for_sales.append((upc_reg, selling_price_reg))
 
-                for upc_code, price in selected_upcs:
-                    qty = random.randint(1, 5) # Збільшено кількість одиниць товару
-                    session.add(Sale(UPC=upc_code, check_number=check_id, product_number=qty, selling_price=price))
-                    check_sum += price * qty
+            #кожен третій товар робимо акційним
+            if p_id % 3 == 0:
+                upc_counter += 1
+                upc_prom = f"{p_id:03d}P{upc_counter:08d}"[:12]
+                selling_price_prom = round(selling_price_reg * 0.8, 2)
+                store_products_data.append(
+                    (upc_prom, upc_reg, p_id, selling_price_prom, 15, True))
+                upcs_for_sales.append((upc_prom, selling_price_prom))
 
-                vat = check_sum * 0.2
-                session.add(Check(check_number=check_id, id_employee=empl.id_employee,
-                                  card_number=cust.card_number if cust else None, print_date=p_date,
-                                  sum_total=check_sum, vat=vat))
+        await conn.executemany("""
+                               INSERT INTO store_product (UPC, UPC_prom, id_product, selling_price, products_number,
+                                                          promotional_product)
+                               VALUES ($1, $2, $3, $4, $5, $6)
+                               """, store_products_data)
 
-            await session.commit()
-            print(f"✅ База успішно ожила! Додано {len(products_list)} товарів та {i} чеків.")
+        #чеки та продажі
+        checks_to_insert = []
+        sales_to_insert = []
+        num_checks = 50
 
-        except Exception as e:
-            await session.rollback()
-            print(f"❌ Помилка при заповненні: {e}")
-            raise # Re-raise the exception for better debugging
+        cashier_idx = 0
+        customer_idx = 0
+        upc_sales_idx = 0
+        base_date = datetime(2023, 10, 1, 9, 0, 0)
+
+        for i in range(1, num_checks + 1):
+            check_id = str(i)
+            empl_id = cashier_ids[cashier_idx % len(cashier_ids)]
+            cashier_idx += 1
+            card_num = None
+            if i % 3 != 0:
+                card_num = customer_card_numbers[customer_idx % len(customer_card_numbers)]
+                customer_idx += 1
+
+            p_date = base_date + timedelta(hours=i * 2)
+            check_sum = 0.0
+            num_items_in_check = 3
+
+            selected_upcs_for_sale = []
+            for _ in range(num_items_in_check):
+                selected_upcs_for_sale.append(upcs_for_sales[upc_sales_idx % len(upcs_for_sales)])
+                upc_sales_idx += 1
+
+            for upc_code, price in selected_upcs_for_sale:
+                qty = 2
+                sales_to_insert.append((upc_code, check_id, qty, price))
+                check_sum += price * qty
+
+            vat = round(check_sum * 0.2, 2)
+            checks_to_insert.append((check_id, empl_id, card_num, p_date, round(check_sum, 2), vat))
+
+        await conn.executemany("""
+                               INSERT INTO "check" (check_number, id_employee, card_number, print_date, sum_total, vat)
+                               VALUES ($1, $2, $3, $4, $5, $6)
+                               """, checks_to_insert)
+
+        await conn.executemany("""
+                               INSERT INTO sale (UPC, check_number, product_number, selling_price)
+                               VALUES ($1, $2, $3, $4)
+                               """, sales_to_insert)
+
+        print(f"Базу даних наповнено. Додано {len(products_data)} товарів та {num_checks} чеків.")
+
+    except Exception as e:
+        print(f"Помилка: {e}")
+        raise
+    finally:
+        await conn.close()
 
 
 if __name__ == "__main__":
