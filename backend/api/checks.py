@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 import asyncpg
 from decimal import Decimal
 from datetime import datetime, timezone
-
+from typing import List
 from backend.core.database import get_db_conn
 from backend.api.dep import get_current_user
 from backend.schemas.check import CheckCreate, CheckResponse
@@ -63,7 +63,7 @@ async def create_check(
                                             check_data.card_number, print_date, sum_total, vat)
 
             await conn.executemany('''
-                                   INSERT INTO sale ("UPC", check_number, product_number, selling_price)
+                                   INSERT INTO sale (upc AS "UPC", check_number, product_number, selling_price)
                                    VALUES ($1, $2, $3, $4)
                                    ''', sales_to_insert)
 
@@ -73,3 +73,34 @@ async def create_check(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка сервера: {str(e)}")
+
+@router.get("/", response_model=List[CheckResponse])
+async def get_all_checks(
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    result = await conn.fetch('SELECT * FROM "check" ORDER BY print_date DESC')
+    return [dict(r) for r in result]
+
+
+@router.delete("/{check_number}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_check(
+        check_number: str,
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+        ):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Тільки Менеджер може видаляти чеки"
+        )
+
+    result = await conn.fetchval(
+        'DELETE FROM "check" WHERE check_number = $1 RETURNING check_number',
+        check_number
+    )
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Чек не знайдено")
+
+    return None

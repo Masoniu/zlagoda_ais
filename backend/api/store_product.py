@@ -14,7 +14,15 @@ async def get_all_store_products(
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
-    result = await conn.fetch("SELECT * FROM store_product")
+    result = await conn.fetch("""
+                              SELECT upc AS "UPC",
+                                     upc_prom AS "UPC_prom",
+                                     id_product,
+                                     selling_price,
+                                     products_number,
+                                     promotional_product
+                              FROM store_product
+                              """)
     return [dict(r) for r in result]
 
 
@@ -31,12 +39,12 @@ async def create_store_product(
     if not prod_check:
         raise HTTPException(status_code=400, detail="Product ID does not exist in catalog")
 
-    upc_check = await conn.fetchval("SELECT 1 FROM store_product WHERE \"UPC\" = $1", item.UPC)
+    upc_check = await conn.fetchval("SELECT 1 FROM store_product WHERE upc = $1", item.UPC)
     if upc_check:
         raise HTTPException(status_code=400, detail="Product with this UPC already exists")
 
     new_sp = await conn.fetchrow("""
-                                 INSERT INTO store_product ("UPC", "UPC_prom", id_product, selling_price,
+                                 INSERT INTO store_product (upc AS "UPC", upc_prom AS "UPC_prom", id_product, selling_price,
                                                             products_number, promotional_product)
                                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
                                  """, item.UPC, item.UPC_prom, item.id_product, item.selling_price,
@@ -54,7 +62,7 @@ async def delete_store_product(
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може видаляти товари")
 
-    result = await conn.fetchval("DELETE FROM store_product WHERE \"UPC\" = $1 RETURNING \"UPC\"", upc)
+    result = await conn.fetchval("DELETE FROM store_product WHERE upc = $1 RETURNING upc", upc)
 
     if not result:
         raise HTTPException(status_code=404, detail="Store product not found")

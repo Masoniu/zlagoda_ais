@@ -3,7 +3,7 @@ import asyncpg
 from typing import List
 
 from backend.core.database import get_db_conn
-from backend.schemas.product import ProductCreate, ProductResponse
+from backend.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 from backend.api.dep import get_current_user
 
 router = APIRouter()
@@ -35,3 +35,51 @@ async def create_product(
                                       getattr(product, 'manufacturer', 'Невідомо'), product.characteristics)
 
     return dict(new_product)
+
+
+@router.put("/{id_product}", response_model=ProductResponse)
+async def update_product(
+        id_product: int,
+        product_data: ProductUpdate,
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари")
+
+    cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1", product_data.category_number)
+    if not cat_check:
+        raise HTTPException(status_code=400, detail="Category not found")
+
+    updated_product = await conn.fetchrow("""
+                                          UPDATE product
+                                          SET category_number = $1,
+                                              product_name    = $2,
+                                              manufacturer    = $3,
+                                              characteristics = $4
+                                          WHERE id_product = $5 RETURNING *
+                                          """, product_data.category_number, product_data.product_name,
+                                          getattr(product_data, 'manufacturer', 'Невідомо'),
+                                          product_data.characteristics, id_product)
+
+    if not updated_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return dict(updated_product)
+
+
+@router.delete("/{id_product}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product(
+        id_product: int,
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Тільки Менеджер може видаляти товари")
+
+    result = await conn.fetchval("DELETE FROM product WHERE id_product = $1 RETURNING id_product", id_product)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return None

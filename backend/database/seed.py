@@ -3,6 +3,7 @@ import asyncpg
 import os
 from datetime import date, datetime, timedelta
 from dotenv import load_dotenv
+from backend.core.security import get_password_hash #ВИДАЛИТИ ПОТІМ
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -38,7 +39,7 @@ async def seed_data():
                                """, categories_data)
 
         #працівники
-        hash_123 = "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjIQqiRQYq"
+        hash_123 = get_password_hash("123")
         employees_data = [
             ('12345', hash_123, 'Мельник', 'Анна', 'Олексіївна', 'Менеджер', 45000.00, date(1990, 5, 14),
              date(2023, 5, 20), '+380951234567', 'Київ', 'вул. Хрещатик 15', '02100'),
