@@ -35,13 +35,22 @@
             placeholder="Пошук за прізвищем"
           />
         </div>
-        <button
-          class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
-          data-bs-toggle="modal"
-          data-bs-target="#addEmployeeModal"
-        >
-          + Додати працівника
-        </button>
+        <div class="d-flex align-items-center gap-3">
+          <button
+            class="btn-filter-ghost"
+            onclick="openFilterModal('employees')"
+            title="Фільтри"
+          >
+            <i class="bi bi-funnel fs-4"></i>
+          </button>
+          <button
+            class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
+            data-bs-toggle="modal"
+            data-bs-target="#addEmployeeModal"
+          >
+            + Додати працівника
+          </button>
+        </div>
       </div>
 
       <!--TABLE-->
