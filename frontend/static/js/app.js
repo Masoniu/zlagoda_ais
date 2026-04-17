@@ -12,6 +12,8 @@ let itemToDeleteId = null;
 let itemToDeleteType = null;
 let currentSortColumn = '';
 let isAscending = true;
+let currentReceipt = [];
+let appliedCustomer = null;
 
 const mockCategories = [
     { category_number: 1, category_name: "Молочні продукти" },
@@ -199,6 +201,43 @@ function renderCustomers(data) {
                 </button>
                 <button class="btn btn-sm btn_edit me-2" onclick="prepareEditCustomer('${cust.card_number}')">Редагувати</button>
                 <button class="btn btn-sm btn_delete" onclick="deleteCustomer('${cust.card_number}')">Видалити</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderPosTable() {
+    const tbody = document.getElementById('posTableBody');
+    if (!tbody) return;
+
+    if (currentReceipt.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-5">Чек порожній. Відскануйте товар.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = currentReceipt.map((item, index) => `
+        <tr>
+            <td class="ps-4">
+                <div class="fw-bold">${item.name}</div>
+                <div class="text-muted small">UPC: ${item.upc}</div>
+            </td>
+            <td>${item.price.toFixed(2)}</td>
+            <td class="text-center">
+                <div class="d-flex border rounded-2 mx-auto" style="border-color: var(--text-color) !important; width: fit-content; overflow: hidden;">
+                    <button class="btn btn-sm btn-qty-pos border-0 rounded-0 px-2" onclick="changeQty(${index}, -1)">-</button>
+                    <div class="border-start border-end d-flex align-items-center justify-content-center fw-bold bg-white" 
+                         style="width: 40px; border-color: var(--text-color) !important; color: var(--text-color);">
+                        ${item.quantity}
+                    </div>
+                    
+                    <button class="btn btn-sm btn-qty-pos border-0 rounded-0 px-2" onclick="changeQty(${index}, 1)">+</button>
+                </div>
+            </td>
+            <td class="fw-bold">${(item.price * item.quantity).toFixed(2)}</td>
+            <td class="text-end pe-4">
+                <button class="btn btn-delete-pos p-0 fs-5" onclick="removeFromReceipt(${index})">
+                    <i class="bi bi-trash"></i>
+                </button>
             </td>
         </tr>
     `).join('');
@@ -408,7 +447,73 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.classList.toggle('active', btn.dataset.role === "Касир");
         });
     });
-}
+
+    }
+    
+    const posForm = document.getElementById('posScanForm');
+    const posInput = document.getElementById('posUpcInput');
+
+    if (posForm) {
+        posForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const upc = posInput.value.trim();
+            
+            const storeProduct = mockStoreProducts.find(sp => sp.upc === upc);
+
+            if (storeProduct) {
+                const existingItem = currentReceipt.find(item => item.upc === upc);
+
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    const productInfo = mockProducts.find(p => p.id === storeProduct.id_product);
+                    currentReceipt.push({
+                        upc: storeProduct.upc,
+                        name: productInfo ? productInfo.name : "Невідомий товар",
+                        price: storeProduct.selling_price,
+                        quantity: 1
+                    });
+                }
+
+                renderPosTable();
+                calculatePosTotals();
+                posInput.value = '';
+            } else {
+                alert("Товар з таким UPC не знайдено!");
+            }
+        });
+        const posCardForm = document.getElementById('posCardForm');
+    const posCardInput = document.getElementById('posCardInput');
+    const posCardResult = document.getElementById('posCardResult');
+
+    if (posCardForm) {
+        posCardForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const cardNumber = posCardInput.value.trim();
+            
+            if (!cardNumber) {
+                appliedCustomer = null;
+                posCardResult.textContent = '';
+                calculatePosTotals();
+                return;
+            }
+
+            const customer = mockCustomers.find(c => c.card_number === cardNumber);
+
+            if (customer) {
+                appliedCustomer = customer;
+                posCardResult.textContent = `Застосовано: ${customer.surname} ${customer.name[0]}. (-${customer.percent}%)`;
+                posCardResult.className = 'small mt-2 fw-semibold text-success';
+            } else {
+                appliedCustomer = null;
+                posCardResult.textContent = 'Картку не знайдено!';
+                posCardResult.className = 'small mt-2 fw-semibold text-danger';
+            }
+            
+            calculatePosTotals();
+        });
+    }
+    }
 
    const btnConfirmDelete = document.getElementById('btnConfirmDelete');
     if (btnConfirmDelete) {
@@ -995,3 +1100,37 @@ function sortTableData(dataArray, key, type, renderFunction) {
 
     renderFunction(dataArray);
 }
+
+function calculatePosTotals() {
+    const subtotal = currentReceipt.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    let discount = 0;
+    if (appliedCustomer) {
+        discount = subtotal * (appliedCustomer.percent / 100);
+    }
+
+    const total = subtotal - discount;
+    const vat = total * 0.2;
+
+    document.getElementById('posSubtotal').textContent = subtotal.toFixed(2);
+    document.getElementById('posDiscount').textContent = discount.toFixed(2);
+    document.getElementById('posVat').textContent = vat.toFixed(2);
+    document.getElementById('posTotal').textContent = total.toFixed(2);
+
+    document.getElementById('posPayBtn').disabled = currentReceipt.length === 0;
+}
+
+window.changeQty = (index, delta) => {
+    currentReceipt[index].quantity += delta;
+    if (currentReceipt[index].quantity <= 0) {
+        currentReceipt.splice(index, 1);
+    }
+    renderPosTable();
+    calculatePosTotals();
+};
+
+window.removeFromReceipt = (index) => {
+    currentReceipt.splice(index, 1);
+    renderPosTable();
+    calculatePosTotals();
+};
