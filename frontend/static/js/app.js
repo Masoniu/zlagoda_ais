@@ -94,7 +94,7 @@ function renderProducts(data) {
                 <td class="text-muted">${prod.manufacturer}</td>
                 <td class="text-muted small">${prod.chars}</td>
                 <td><span class="badge bg-light text-dark border p-2 fs-6 fw-normal">${catName}</span></td>
-                <td class="text-end pe-4">
+                <td class="text-end pe-4 cashier-hide-col">
                     <button class="btn btn-sm btn_edit me-2">Редагувати</button>
                     <button class="btn btn-sm btn_delete">Видалити</button>
                 </td>
@@ -121,7 +121,7 @@ function renderStoreProducts(data) {
                 <td>${sp.selling_price.toFixed(2)}</td>
                 <td>${sp.products_number} шт.</td>
                 <td>${promoBadge}</td>
-                <td class="text-end pe-4">
+                <td class="text-end pe-4 cashier-hide-col">
                     <button class="btn btn-sm btn_edit me-2" onclick="prepareEditStoreProduct('${sp.upc}')">Редагувати</button>
                     <button class="btn btn-sm btn_delete" onclick="deleteStoreProduct('${sp.upc}')">Видалити</button>
                 </td>
