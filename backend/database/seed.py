@@ -222,6 +222,17 @@ async def seed_data():
                                VALUES ($1, $2, $3, $4)
                                """, sales_to_insert)
 
+        await conn.execute("""
+                           SELECT setval(pg_get_serial_sequence('category', 'category_number'),
+                                         (SELECT MAX(category_number) FROM category));
+                           SELECT setval(pg_get_serial_sequence('product', 'id_product'),
+                                         (SELECT MAX(id_product) FROM product));
+                           SELECT setval(pg_get_serial_sequence('check', 'check_number'),
+                                         (SELECT MAX(CAST(check_number AS BIGINT)) FROM "check"))
+                           """)
+
+        await conn.execute("COMMIT")
+
         print(f"Базу даних наповнено. Додано {len(products_data)} товарів та {num_checks} чеків.")
 
     except Exception as e:
