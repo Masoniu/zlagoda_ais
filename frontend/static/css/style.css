@@ -328,7 +328,8 @@ body.loaded {
   .modal,
   td:last-child,
   th:last-child,
-  .bi-arrow-down-up {
+  .bi-arrow-down-up,
+  .btn-filter-ghost {
     display: none !important;
   }
 
