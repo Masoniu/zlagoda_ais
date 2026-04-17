@@ -334,3 +334,9 @@ body.loaded {
     color: black !important;
   }
 }
+
+body.cashier-mode .btn_edit,
+body.cashier-mode .btn_delete,
+body.cashier-mode .btn-add-new {
+  display: none !important;
+}
