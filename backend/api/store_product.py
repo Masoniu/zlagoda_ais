@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+import asyncpg
 from typing import List
 
-from backend.core.database import get_db
-from backend.schemas.store_product import StoreProductCreate, StoreProductResponse, StoreProductUpdate
+from backend.core.database import get_db_conn
+from backend.schemas.store_product import StoreProductCreate, StoreProductResponse
 from backend.api.dep import get_current_user
 
 router = APIRouter()
@@ -12,64 +11,51 @@ router = APIRouter()
 
 @router.get("/", response_model=List[StoreProductResponse])
 async def get_all_store_products(
-        db: AsyncSession = Depends(get_db),
+        conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
-    query = text("SELECT * FROM store_product")
-    result = await db.execute(query)
-    return result.mappings().all()
+    result = await conn.fetch("SELECT * FROM store_product")
+    return [dict(r) for r in result]
 
 
 @router.post("/", response_model=StoreProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_store_product(
         item: StoreProductCreate,
-        db: AsyncSession = Depends(get_db),
+        conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може додавати товари в магазин")
 
-    prod_check_query = text("SELECT 1 FROM product WHERE id_product = :id_prod")
-    prod_check = await db.execute(prod_check_query, {"id_prod": item.id_product})
-    if not prod_check.scalar():
+    prod_check = await conn.fetchval("SELECT 1 FROM product WHERE id_product = $1", item.id_product)
+    if not prod_check:
         raise HTTPException(status_code=400, detail="Product ID does not exist in catalog")
-    upc_check_query = text("SELECT 1 FROM store_product WHERE UPC = :upc")
-    upc_check = await db.execute(upc_check_query, {"upc": item.UPC})
-    if upc_check.scalar():
+
+    upc_check = await conn.fetchval("SELECT 1 FROM store_product WHERE \"UPC\" = $1", item.UPC)
+    if upc_check:
         raise HTTPException(status_code=400, detail="Product with this UPC already exists")
-    insert_query = text("""
-        INSERT INTO store_product (UPC, UPC_prom, id_product, selling_price, products_number, promotional_product)
-        VALUES (:upc, :upc_prom, :id_product, :price, :qty, :is_prom)
-        RETURNING *
-    """)
 
-    result = await db.execute(insert_query, {
-        "upc": item.UPC,
-        "upc_prom": item.UPC_prom,
-        "id_product": item.id_product,
-        "price": item.selling_price,
-        "qty": item.products_number,
-        "is_prom": item.promotional_product
-    })
-    await db.commit()
+    new_sp = await conn.fetchrow("""
+                                 INSERT INTO store_product ("UPC", "UPC_prom", id_product, selling_price,
+                                                            products_number, promotional_product)
+                                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+                                 """, item.UPC, item.UPC_prom, item.id_product, item.selling_price,
+                                 item.products_number, item.promotional_product)
 
-    return result.mappings().first()
+    return dict(new_sp)
 
 
 @router.delete("/{upc}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_store_product(
         upc: str,
-        db: AsyncSession = Depends(get_db),
+        conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може видаляти товари")
 
-    delete_query = text("DELETE FROM store_product WHERE UPC = :upc RETURNING UPC")
-    result = await db.execute(delete_query, {"upc": upc})
-    await db.commit()
+    result = await conn.fetchval("DELETE FROM store_product WHERE \"UPC\" = $1 RETURNING \"UPC\"", upc)
 
-    if not result.mappings().first():
+    if not result:
         raise HTTPException(status_code=404, detail="Store product not found")
-
     return None
