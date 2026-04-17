@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[CategoryResponse])
 async def get_all_categories(conn: asyncpg.Connection = Depends(get_db_conn)):
-    result = await conn.fetch("SELECT category_number, category_name FROM category")
+    result = await conn.fetch("SELECT category_number, category_name FROM category ORDER BY category_number")
     return [dict(r) for r in result]
 
 @router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
@@ -51,6 +51,7 @@ async def update_category(
 
     return dict(updated_category)
 
+
 @router.delete("/{category_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(
         category_number: int,
@@ -58,13 +59,20 @@ async def delete_category(
         current_user: dict = Depends(get_current_user)
 ):
     if current_user["empl_role"] != "Менеджер":
-        raise HTTPException(status_code=403, detail="You do not have enough permissions")
+        raise HTTPException(status_code=403, detail="Тільки Менеджер може видаляти категорії")
 
-    result = await conn.fetchval(
-        "DELETE FROM category WHERE category_number = $1 RETURNING category_number",
-        category_number
-    )
+    try:
+        result = await conn.fetchval(
+            "DELETE FROM category WHERE category_number = $1 RETURNING category_number",
+            category_number
+        )
 
-    if not result:
-        raise HTTPException(status_code=404, detail="Category not found")
-    return None
+        if not result:
+            raise HTTPException(status_code=404, detail="Категорію не знайдено")
+        return None
+
+    except asyncpg.exceptions.ForeignKeyViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неможливо видалити цю категорію, оскільки до неї прив'язані товари в каталозі. Спочатку змініть категорію для цих товарів або видаліть їх."
+        )
