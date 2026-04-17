@@ -10,5 +10,5 @@ class Product(Base):
         ForeignKey("category.category_number", onupdate="CASCADE", ondelete="NO ACTION"), 
         nullable=False
     )
-    product_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    product_name: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     characteristics: Mapped[str] = mapped_column(String(100), nullable=False)
