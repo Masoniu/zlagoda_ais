@@ -118,6 +118,27 @@ h2 {
   color: white !important;
 }
 
+.btn_delete {
+  background-color: var(--text-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 5px 15px;
+}
+
+.btn_logout {
+  background-color: var(--text-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 5px 15px;
+}
+
+.btn_logout:hover {
+  opacity: 0.85;
+  color: white !important;
+}
+
 .nav-link:hover {
   text-decoration: none !important;
   text-underline-offset: 5px;
