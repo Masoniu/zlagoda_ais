@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import asyncpg
 from typing import List
+from fastapi import Query
+from typing import Optional
 
 from backend.core.database import get_db_conn
 from backend.schemas.customer_card import CustomerCardCreate, CustomerCardResponse, CustomerCardUpdate
@@ -10,9 +12,26 @@ router = APIRouter()
 
 
 @router.get("/", response_model=List[CustomerCardResponse])
-async def get_all_cards(conn: asyncpg.Connection = Depends(get_db_conn),
-                        current_user: dict = Depends(get_current_user)):
-    result = await conn.fetch("SELECT * FROM customer_card")
+async def get_all_cards(
+        percent: Optional[int] = Query(None, description="Фільтр за відсотком знижки"),
+        surname: Optional[str] = Query(None, description="Пошук за прізвищем"),
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    query = "SELECT * FROM customer_card WHERE 1=1"
+    args = []
+
+    if percent is not None:
+        args.append(percent)
+        query += f" AND percent = ${len(args)}"
+
+    if surname:
+        args.append(f"%{surname}%")
+        query += f" AND cust_surname ILIKE ${len(args)}"
+
+    query += " ORDER BY cust_surname"
+
+    result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
 @router.post("/", response_model=CustomerCardResponse, status_code=status.HTTP_201_CREATED)
