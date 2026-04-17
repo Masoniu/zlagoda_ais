@@ -9,7 +9,7 @@ from typing import List
 from backend.core.database import get_db_conn
 from backend.api.dep import get_current_user
 from backend.schemas.check import CheckCreate, CheckResponse
-from schemas.employee import EmployeeResponse
+from backend.schemas.employee import EmployeeResponse
 
 router = APIRouter()
 
