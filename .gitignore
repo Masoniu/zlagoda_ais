@@ -2,35 +2,52 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
+*.pyo
+*.pyd
 
-# Virtual Environment
-venv/
+# Virtual environments
 env/
+venv/
 ENV/
-.venv
+.venv/
+env.bak/
+venv.bak/
 
-# Environment variables
-.env
-.env.local
+# Packaging / distribution
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
 
-# IDE
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# PyCharm
 .idea/
-.vscode/
-*.swp
-*.swo
-*~
 
-# OS
+# Editor / OS
+.vscode/
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
+# Environment / secrets
+.env
+.env.*
 
-# Alembic
-backend/database/alembic/__pycache__/
-backend/database/alembic/versions/__pycache__/
+# Node / JavaScript
+node_modules/
+.cache/
+.parcel-cache/
+dist/
+build/
+.next/
+out/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
