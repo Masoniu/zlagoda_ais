@@ -32,7 +32,7 @@ app.include_router(categories_router, prefix="/categories", tags=["Categories"])
 app.include_router(products_router, prefix="/products", tags=["Products"])
 app.include_router(store_products_router, prefix="/store-products", tags=["Store Inventory"])
 app.include_router(customer_cards_router, prefix="/customer-cards", tags=["Customer Cards"])
-app.include_router(checks_router, prefix="/checks", tags=["Checks & Sales"])
+app.include_router(checks_router, prefix="/checks", tags=["Checks"])
 
 @app.get("/")
 async def root():
