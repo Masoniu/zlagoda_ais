@@ -270,23 +270,12 @@ if (loginForm) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const navPlaceholder = document.getElementById('navbar_placeholder');
-    if (navPlaceholder) {
-        const role = sessionStorage.getItem('userRole');
-        if (role == 'Касир') {
-            document.body.classList.add('cashier-mode');
-        }
-        const navFile = (role === 'Касир') ? '../shared/cash_navbar.html' : '../shared/man_navbar.html';
-        
-        try {
-            const res = await fetch(navFile);
-            navPlaceholder.innerHTML = await res.text();
-        } catch (error) {
-            console.error("Помилка завантаження меню:", error);
-        }
+    const role = sessionStorage.getItem('userRole');
+    if (role == 'Касир') {
+        document.body.classList.add('cashier-mode');
     }
-
-   const modalsPlaceholder = document.getElementById('modals_placeholder');
+    
+    const modalsPlaceholder = document.getElementById('modals_placeholder');
     if (modalsPlaceholder) {
         try {
             const res = await fetch('../shared/modals.html');
@@ -295,18 +284,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error("Помилка завантаження модалок:", error);
         }
     }
+    const navPlaceholder = document.getElementById('navbar_placeholder');
+    if (navPlaceholder) {
+        const navFile = (role === 'Касир') ? '../shared/cash_navbar.html' : '../shared/man_navbar.html';
+        
+        try {
+            const res = await fetch(navFile);
+            navPlaceholder.innerHTML = await res.text();
 
-    setTimeout(() => {
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
-                logoutModal.show();
-            });
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    const modalEl = document.getElementById('logoutModal');
+                    const logoutModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    logoutModal.show();
+                });
+            }
+
+            displayUserName();
+
+        } catch (error) {
+            console.error("Помилка завантаження меню:", error);
         }
-    }, 100);
+    }
 
-    displayUserName();
     updateGreeting();
 
     if (document.getElementById('categoryTableBody')) {
@@ -348,14 +349,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCustomers(mockCustomers);
         setupSearch('customerSearch', mockCustomers, renderCustomers, 'surname');
         setupCustomerForm();
-    }
-
-   const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
-            logoutModal.show();
-        });
     }
 
     const confirmLogout = document.getElementById('confirmLogout');
