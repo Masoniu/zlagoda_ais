@@ -1,57 +1,48 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+import asyncpg
 from typing import List
 
-from backend.core.database import get_db
-from backend.schemas.customer_card import CustomerCardCreate, CustomerCardResponse, CustomerCardUpdate
+from backend.core.database import get_db_conn
+from backend.schemas.customer_card import CustomerCardCreate, CustomerCardResponse
 from backend.api.dep import get_current_user
 
 router = APIRouter()
 
-
 @router.get("/", response_model=List[CustomerCardResponse])
-async def get_all_cards(db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    query = text("SELECT * FROM customer_card")
-    result = await db.execute(query)
-    return result.mappings().all()
-
+async def get_all_cards(conn: asyncpg.Connection = Depends(get_db_conn), current_user: dict = Depends(get_current_user)):
+    result = await conn.fetch("SELECT * FROM customer_card")
+    return [dict(r) for r in result]
 
 @router.post("/", response_model=CustomerCardResponse, status_code=status.HTTP_201_CREATED)
 async def create_card(
         card: CustomerCardCreate,
-        db: AsyncSession = Depends(get_db),
+        conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
-    check_query = text("SELECT 1 FROM customer_card WHERE card_number = :card_num")
-    exists = await db.execute(check_query, {"card_num": card.card_number})
-    if exists.scalar():
+    exists = await conn.fetchval("SELECT 1 FROM customer_card WHERE card_number = $1", card.card_number)
+    if exists:
         raise HTTPException(status_code=400, detail="Card already exists")
 
-    query = text("""
+    new_card = await conn.fetchrow("""
         INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic, phone_number, city, street, zip_code, percent)
-        VALUES (:card_num, :surname, :name, :patr, :phone, :city, :street, :zip, :percent)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *
-    """)
+    """, card.card_number, card.cust_surname, card.cust_name, card.cust_patronymic,
+         card.phone_number, card.city, card.street, card.zip_code, card.percent)
 
-    result = await db.execute(query, card.model_dump())
-    await db.commit()
-    return result.mappings().first()
-
+    return dict(new_card)
 
 @router.delete("/{card_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_card(
         card_number: str,
-        db: AsyncSession = Depends(get_db),
+        conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Only Managers can delete cards")
 
-    query = text("DELETE FROM customer_card WHERE card_number = :card_num RETURNING card_number")
-    result = await db.execute(query, {"card_num": card_number})
-    await db.commit()
+    result = await conn.fetchval("DELETE FROM customer_card WHERE card_number = $1 RETURNING card_number", card_number)
 
-    if not result.mappings().first():
+    if not result:
         raise HTTPException(status_code=404, detail="Card not found")
     return None
