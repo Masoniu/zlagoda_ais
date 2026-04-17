@@ -1134,3 +1134,50 @@ window.removeFromReceipt = (index) => {
     renderPosTable();
     calculatePosTotals();
 };
+
+window.openFilterModal = (pageType) => {
+    document.querySelectorAll('.filter-section').forEach(el => el.style.display = 'none');
+    
+    const section = document.getElementById(`filter-${pageType}`);
+    if (section) section.style.display = 'block';
+
+    const titles = {
+        'employees': 'Вибір персоналу',
+        'customers': 'Фільтр за знижкою',
+        'products': 'Вибір категорій',
+        'store-products': 'Фільтр акцій',
+        'checks': 'Звіти за період'
+    };
+    document.getElementById('filterModalTitle').textContent = titles[pageType] || 'Фільтрація';
+
+    if (pageType === 'products') {
+        const container = document.getElementById('filterCategoryList');
+        if (container) {
+            container.innerHTML = mockCategories.map(cat => `
+                <div class="form-check mb-1">
+                    <input class="form-check-input zlagoda-checkbox" type="checkbox" value="${cat.category_number}" id="catCheck${cat.category_number}" checked>
+                    <label class="form-check-label small" for="catCheck${cat.category_number}">${cat.category_name}</label>
+                </div>
+            `).join('');
+        }
+    }
+
+    if (pageType === 'checks') {
+        const select = document.getElementById('filterCheckCashier');
+        if (select && select.options.length <= 1) {
+            const cashiers = mockEmployees.filter(e => e.role === 'Касир');
+            cashiers.forEach(c => {
+                const opt = new Option(`${c.surname} ${c.name[0]}.`, c.id);
+                select.add(opt);
+            });
+        }
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).show();
+};
+
+window.changeFilterPercent = (delta) => {
+    const input = document.getElementById('filterPercent');
+    let val = (parseInt(input.value) || 0) + delta;
+    input.value = Math.max(0, Math.min(100, val));
+};
