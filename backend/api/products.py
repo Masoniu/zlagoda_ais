@@ -13,15 +13,12 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ProductResponse])
 async def get_products(db: AsyncSession = Depends(get_db)):
-    """Retrieve all products from the database"""
     result = await db.execute(select(ProductModel))
     return result.scalars().all()
 
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db)):
-    """Create a new product, verifying if the category exists"""
-    # Check if category exists
     cat_check = await db.execute(
         select(CategoryModel).where(CategoryModel.category_number == product.category_number)
     )
@@ -37,7 +34,6 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
 
 @router.delete("/{id_product}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(id_product: int, db: AsyncSession = Depends(get_db)):
-    """Delete a product by its unique ID"""
     result = await db.execute(select(ProductModel).where(ProductModel.id_product == id_product))
     product = result.scalar_one_or_none()
 

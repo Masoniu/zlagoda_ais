@@ -244,24 +244,19 @@ if (loginForm) {
             const user = mockEmployees.find(e => e.id === enteredID && e.password === enteredPass);
 
             if (user) {
-                if (user.role !== 'Менеджер') {
-                    alertMessage.style.color = 'red';
-                    alertMessage.textContent = 'Недостатній рівень авторизації';
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                    return;
-                }
-
                 const initials = `${user.surname} ${user.name[0]}. ${user.patronymic ? user.patronymic[0] + '.' : ''}`.trim();
                 sessionStorage.setItem('userName', initials);
-                
-                sessionStorage.setItem('userRole', user.role_of_employee); 
-                
-                alertMessage.style.color = 'var(--primary-color)';
+                sessionStorage.setItem('userRole', user.role); 
+                sessionStorage.setItem('userId', user.id);
+                alertMessage.style.color = 'var(--primary_color)';
                 alertMessage.textContent = `Вітаємо, ${initials}!`;
-                
+
                 setTimeout(() => {
-                    window.location.href = '../manager/home.html';
+                    if (user.role === 'Менеджер') {
+                        window.location.href = '../manager/home.html';
+                    } else if (user.role === 'Касир') {
+                        window.location.href = '../cashier/home.html';
+                    }
                 }, 1000);
 
             } else {
@@ -274,16 +269,45 @@ if (loginForm) {
     });
 }
 
-const navbarFetch = fetch('man_navbar.html').then(res => res.text()).catch(() => '');
-const modalsFetch = fetch('../shared/modals.html').then(res => res.text()).catch(() => '');
-
 document.addEventListener('DOMContentLoaded', async () => {
-    const navPlaceholder = document.getElementById('navbar_placeholder');
-    if (navPlaceholder) navPlaceholder.innerHTML = await navbarFetch;
-
+    const role = sessionStorage.getItem('userRole');
+    if (role == 'Касир') {
+        document.body.classList.add('cashier-mode');
+    }
+    
     const modalsPlaceholder = document.getElementById('modals_placeholder');
-    if (modalsPlaceholder) modalsPlaceholder.innerHTML = await modalsFetch;
-    displayUserName();
+    if (modalsPlaceholder) {
+        try {
+            const res = await fetch('../shared/modals.html');
+            modalsPlaceholder.innerHTML = await res.text();
+        } catch (error) {
+            console.error("Помилка завантаження модалок:", error);
+        }
+    }
+    const navPlaceholder = document.getElementById('navbar_placeholder');
+    if (navPlaceholder) {
+        const navFile = (role === 'Касир') ? '../shared/cash_navbar.html' : '../shared/man_navbar.html';
+        
+        try {
+            const res = await fetch(navFile);
+            navPlaceholder.innerHTML = await res.text();
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    const modalEl = document.getElementById('logoutModal');
+                    const logoutModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    logoutModal.show();
+                });
+            }
+
+            displayUserName();
+
+        } catch (error) {
+            console.error("Помилка завантаження меню:", error);
+        }
+    }
+
     updateGreeting();
 
     if (document.getElementById('categoryTableBody')) {
@@ -325,14 +349,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCustomers(mockCustomers);
         setupSearch('customerSearch', mockCustomers, renderCustomers, 'surname');
         setupCustomerForm();
-    }
-
-   const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
-            logoutModal.show();
-        });
     }
 
     const confirmLogout = document.getElementById('confirmLogout');

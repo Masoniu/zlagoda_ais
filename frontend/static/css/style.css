@@ -93,6 +93,13 @@ h2 {
   min-height: 100vh;
 }
 
+.cashier_layout {
+  padding-top: 90px !important;
+  display: block !important;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+}
+
 .navbar {
   background-color: var(--primary-color) !important;
   min-height: 70px;
@@ -111,9 +118,34 @@ h2 {
   color: white !important;
 }
 
+.btn_delete {
+  background-color: var(--text-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 5px 15px;
+}
+
+.btn_logout {
+  background-color: var(--text-color) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px;
+  padding: 5px 15px;
+}
+
+.btn_logout:hover {
+  opacity: 0.85;
+  color: white !important;
+}
+
 .nav-link:hover {
   text-decoration: none !important;
   text-underline-offset: 5px;
+}
+
+.badge-cashier {
+  background-color: var(--secondary-color);
 }
 
 .search-container {
@@ -322,4 +354,10 @@ body.loaded {
     font-size: 12px !important;
     color: black !important;
   }
+}
+
+body.cashier-mode .btn_edit,
+body.cashier-mode .btn_delete,
+body.cashier-mode .btn-add-new {
+  display: none !important;
 }
