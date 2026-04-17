@@ -5,6 +5,7 @@ from typing import List
 from backend.core.database import get_db_conn
 from backend.schemas.store_product import StoreProductCreate, StoreProductResponse
 from backend.api.dep import get_current_user
+from backend.schemas.store_product import StoreProductUpdate
 
 router = APIRouter()
 
@@ -51,6 +52,28 @@ async def create_store_product(
                                  item.products_number, item.promotional_product)
 
     return dict(new_sp)
+
+@router.put("/{upc}", response_model=StoreProductResponse)
+async def update_store_product(
+        upc: str,
+        item_data: StoreProductUpdate,
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари в магазині")
+
+    updated_sp = await conn.fetchrow("""
+        UPDATE store_product 
+        SET upc_prom = $1, id_product = $2, selling_price = $3, products_number = $4, promotional_product = $5
+        WHERE upc = $6
+        RETURNING upc AS "UPC", upc_prom AS "UPC_prom", id_product, selling_price, products_number, promotional_product
+    """, item_data.UPC_prom, item_data.id_product, item_data.selling_price, item_data.products_number, item_data.promotional_product, upc)
+
+    if not updated_sp:
+        raise HTTPException(status_code=404, detail="Товар в магазині не знайдено")
+
+    return dict(updated_sp)
 
 
 @router.delete("/{upc}", status_code=status.HTTP_204_NO_CONTENT)
