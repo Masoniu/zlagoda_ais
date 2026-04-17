@@ -8,15 +8,14 @@ from backend.api.customer_cards import router as customer_cards_router
 from backend.api.checks import router as checks_router
 from contextlib import asynccontextmanager
 from backend.core.database import create_db_pool
+from backend.api.employees import router as employees_router
 # uvicorn backend.main:app --reload
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.pool = await create_db_pool()
-    print("Пул з'єднань asyncpg ініціалізовано")
     yield
     await app.state.pool.close()
-    print("Пул з'єднань asyncpg закрито")
 app = FastAPI(title="ZLAGODA AIS API", lifespan=lifespan)
 
 app.add_middleware(
@@ -33,6 +32,7 @@ app.include_router(products_router, prefix="/products", tags=["Products"])
 app.include_router(store_products_router, prefix="/store-products", tags=["Store Inventory"])
 app.include_router(customer_cards_router, prefix="/customer-cards", tags=["Customer Cards"])
 app.include_router(checks_router, prefix="/checks", tags=["Checks"])
+app.include_router(employees_router, prefix="/employees", tags=["Employees"])
 
 @app.get("/")
 async def root():
