@@ -40,6 +40,28 @@ async def create_card(
     return new_card
 
 
+@router.put("/{card_number}", response_model=CustomerCardResponse)
+async def update_card(
+        card_number: str,
+        card_data: CustomerCardUpdate,
+        db: AsyncSession = Depends(get_db),
+        current_user: Employee = Depends(get_current_user)
+):
+    result = await db.execute(select(CustomerCardModel).where(CustomerCardModel.card_number == card_number))
+    card = result.scalar_one_or_none()
+
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    update_data = card_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(card, key, value)
+
+    await db.commit()
+    await db.refresh(card)
+    return card
+
+
 @router.delete("/{card_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_card(
         card_number: str,

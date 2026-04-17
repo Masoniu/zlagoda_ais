@@ -5,7 +5,7 @@ from backend.api.categories import router as categories_router
 from backend.api.products import router as products_router
 from backend.api.store_product import router as store_products_router
 from backend.api.customer_cards import router as customer_cards_router
-
+#uvicorn backend.main:app --reload
 app = FastAPI(title="ZLAGODA AIS API")
 
 app.add_middleware(
