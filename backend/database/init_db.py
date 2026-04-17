@@ -13,6 +13,15 @@ async def init_db():
     try:
         print("Створення таблиць через SQL...")
         async with conn.transaction():
+            await conn.execute("""
+                               DROP TABLE IF EXISTS sale CASCADE;
+                               DROP TABLE IF EXISTS "check" CASCADE;
+                               DROP TABLE IF EXISTS store_product CASCADE;
+                               DROP TABLE IF EXISTS product CASCADE;
+                               DROP TABLE IF EXISTS customer_card CASCADE;
+                               DROP TABLE IF EXISTS employee CASCADE;
+                               DROP TABLE IF EXISTS category CASCADE;
+                               """)
             # категорія
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS category (
