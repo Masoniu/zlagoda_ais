@@ -361,3 +361,12 @@ body.cashier-mode .btn_delete,
 body.cashier-mode .btn-add-new {
   display: none !important;
 }
+
+body.cashier-mode #customerTableBody .btn_edit,
+body.cashier-mode button[data-bs-target="#addCustomerModal"] {
+  display: inline-block !important;
+}
+
+body.cashier-mode .cashier-hide-col {
+  display: none !important;
+}
