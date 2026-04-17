@@ -21,8 +21,20 @@ let mockCustomers = [];
 let mockChecks = [];
 let mockSales = [];
 
+// Зберігаємо стан фільтрів для модального вікна
+let savedFilters = {
+    'employees': { manager: true, cashier: true },
+    'customers': { percent: 0 },
+    'products': { categories: null }, // null = всі вибрані за замовчуванням
+    'store-products': { promo: 'all' },
+    'checks': { cashier: 'all', start: '', end: '' }
+};
+
 const API_BASE_URL = 'http://127.0.0.1:8000';
 
+// ==========================================
+// 2. ФУНКЦІЇ ЗВ'ЯЗКУ З БЕКЕНДОМ (API ADAPTERS)
+// ==========================================
 async function apiFetch(endpoint) {
     const token = sessionStorage.getItem('token');
     if (!token) return [];
@@ -82,6 +94,7 @@ async function apiMutate(endpoint, method, data = null) {
 }
 
 async function loadRealDataFromDB() {
+    // 1. Категорії
     if (document.getElementById('categoryTableBody')) {
         mockCategories = await apiFetch('/categories/');
         renderCategories(mockCategories);
@@ -125,7 +138,8 @@ async function loadRealDataFromDB() {
     if (document.getElementById('storeProductTableBody')) {
         const dbStoreProducts = await apiFetch('/store-products/');
         mockStoreProducts = dbStoreProducts.map(sp => ({
-            upc: sp.UPC, id_product: sp.id_product, selling_price: sp.selling_price,
+            upc: sp.upc || sp.UPC,
+            id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
             products_number: sp.products_number, promotional_product: sp.promotional_product
         }));
         const dbProducts = await apiFetch('/products/');
@@ -140,7 +154,7 @@ async function loadRealDataFromDB() {
         const dbChecks = await apiFetch('/checks/');
         mockChecks = dbChecks.map(c => ({
             check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
-            print_date: new Date(c.print_date).toLocaleString('uk-UA'), sum_total: c.sum_total, vat: c.vat
+            print_date: new Date(c.print_date).toLocaleString('uk-UA'), sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat)
         }));
         const dbEmployees = await apiFetch('/employees/');
         mockEmployees = dbEmployees.map(e => ({ id: e.id_employee, surname: e.empl_surname, name: e.empl_name }));
@@ -596,7 +610,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 calculatePosTotals();
                 posInput.value = '';
             } else {
-                alert("Товар з таким UPC не знайдено на полицях!");
+                showBeautifulAlert("Товар з таким UPC не знайдено на полицях!", 'danger');
             }
         });
 
@@ -664,6 +678,7 @@ function setupCategoryForm() {
         if (res.success) {
             await loadRealDataFromDB();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addCategoryModal')).hide();
+            showBeautifulAlert('Успішно збережено!', 'success');
         }
     });
 }
@@ -692,6 +707,7 @@ function setupProductForm() {
         if (res.success) {
             await loadRealDataFromDB();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addProductModal')).hide();
+            showBeautifulAlert('Успішно збережено!', 'success');
         }
     });
 }
@@ -712,13 +728,10 @@ function setupStoreProductForm() {
         e.preventDefault();
         const upcInput = document.getElementById('spUpcInput').value.trim();
         const isEditMode = document.getElementById('isEditMode').value === "true";
-        const alertMessage = document.getElementById('spAlertMessage');
         const submitBtn = form.querySelector('button[type="submit"]');
 
-        if (alertMessage) alertMessage.textContent = '';
-
         const data = {
-            UPC: upcInput, // API використовує 'UPC' для створення
+            UPC: upcInput,
             upc_prom: null,
             id_product: parseInt(document.getElementById('spProductSelect').value),
             selling_price: parseFloat(document.getElementById('spPriceInput').value),
@@ -736,9 +749,7 @@ function setupStoreProductForm() {
             await loadRealDataFromDB();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addStoreProductModal')).hide();
             resetStoreProductForm();
-        } else if (alertMessage) {
-            alertMessage.textContent = res.error || "Помилка збереження";
-            alertMessage.style.color = 'red';
+            showBeautifulAlert('Успішно збережено!', 'success');
         }
     });
 
@@ -773,12 +784,10 @@ function setupEmployeeForm() {
         submitBtn.disabled = true;
         let res;
         if (editId) {
-            // Видаляємо пароль та ID з payload для PUT, якщо так налаштовано на бекенді
             delete data.password;
             delete data.id_employee;
             res = await apiMutate(`/employees/${editId}`, 'PUT', data);
         } else {
-            // Для нового співробітника обов'язково треба ID, згенеруємо тимчасовий якщо не введено
             data.id_employee = editId || `E${Math.floor(Math.random() * 1000)}`;
             res = await apiMutate('/employees/', 'POST', data);
         }
@@ -787,6 +796,7 @@ function setupEmployeeForm() {
         if (res.success) {
             await loadRealDataFromDB();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addEmployeeModal')).hide();
+            showBeautifulAlert('Успішно збережено!', 'success');
         }
     });
 }
@@ -820,6 +830,7 @@ function setupCustomerForm() {
         if (res.success) {
             await loadRealDataFromDB();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addCustomerModal')).hide();
+            showBeautifulAlert('Успішно збережено!', 'success');
         }
     });
 }
@@ -933,7 +944,7 @@ function viewCheckDetails(checkNumber) {
     document.getElementById('v-check-cashier').textContent = empl ? `${empl.surname} ${empl.name}` : "Невідомий";
     document.getElementById('v-check-date').textContent = chk.print_date;
 
-    apiFetch(`/${checkNumber}/details`).then(data => {
+    apiFetch(`/checks/${checkNumber}/details`).then(data => {
         const tbody = document.getElementById('v-check-products');
         if(data && data.items) {
             tbody.innerHTML = data.items.map(sale => `
@@ -1096,3 +1107,205 @@ function showBeautifulAlert(message, type = 'danger') {
         toastElement.remove();
     });
 }
+
+// ==========================================
+// 11. ФІЛЬТРАЦІЯ ТА СОРТУВАННЯ (ВИПРАВЛЕНО)
+// ==========================================
+
+window.applyFilters = async () => {
+    const activeSection = document.querySelector('.filter-section[style*="display: block"]');
+    if (!activeSection) return;
+
+    const pageType = activeSection.id.replace('filter-', '');
+    let endpoint = '';
+    let filteredData = [];
+
+    try {
+        if (pageType === 'products') {
+            // 1. Отримуємо всі вибрані категорії з чекбоксів
+            const checkedCats = Array.from(document.querySelectorAll('#filterCategoryList input:checked')).map(cb => cb.value);
+            savedFilters['products'].categories = checkedCats;
+
+            // 2. Отримуємо ПОВНИЙ список товарів з бази
+            const dbProducts = await apiFetch('/products/');
+
+            // 3. Фільтруємо на фронті (порівнюємо p.category_number із вибраними id)
+            filteredData = checkedCats.length > 0
+                ? dbProducts.filter(p => checkedCats.includes(p.category_number.toString()))
+                : dbProducts;
+
+            // 4. Оновлюємо mockProducts та рендеримо
+            mockProducts = filteredData.map(p => ({
+                id: p.id_product,
+                name: p.product_name,
+                manufacturer: p.manufacturer,
+                chars: p.characteristics,
+                category_id: p.category_number // Важливо для renderProducts
+            }));
+            renderProducts(mockProducts);
+
+        } else if (pageType === 'customers') {
+            const percentVal = document.getElementById('filterPercent').value;
+            savedFilters['customers'].percent = percentVal;
+
+            // Бекенд чекає параметр percent. Якщо пустий - вантажимо всіх.
+            endpoint = percentVal ? `/customer-cards/?percent=${percentVal}` : '/customer-cards/';
+
+            const dbCustomers = await apiFetch(endpoint);
+            mockCustomers = dbCustomers.map(c => ({
+                card_number: c.card_number,
+                surname: c.cust_surname,
+                name: c.cust_name,
+                patronymic: c.cust_patronymic,
+                phone: c.phone_number,
+                city: c.city,
+                street: c.street,
+                zip: c.zip_code,
+                percent: c.percent // Переконайся, що в БД це поле так називається
+            }));
+            renderCustomers(mockCustomers);
+
+        } else if (pageType === 'employees') {
+            // Логіка для працівників (залишаємо як було, вона працює через чекбокси)
+            const isManager = document.getElementById('fRoleManager').checked;
+            const isCashier = document.getElementById('fRoleCashier').checked;
+            savedFilters['employees'].manager = isManager;
+            savedFilters['employees'].cashier = isCashier;
+
+            let allEmpl = await apiFetch('/employees/');
+            if (isManager && !isCashier) filteredData = allEmpl.filter(e => e.empl_role === 'Менеджер');
+            else if (!isManager && isCashier) filteredData = allEmpl.filter(e => e.empl_role === 'Касир');
+            else filteredData = allEmpl;
+
+            mockEmployees = filteredData.map(e => ({
+                id: e.id_employee, surname: e.empl_surname, name: e.empl_name,
+                role: e.empl_role, salary: e.salary, phone: e.phone_number
+            }));
+            renderEmployees(mockEmployees);
+
+        } else if (pageType === 'store-products') {
+            // Логіка для товарів у магазині (UPC регістр)
+            const promoVal = document.getElementById('filterPromoSelect').value;
+            savedFilters['store-products'].promo = promoVal;
+
+            endpoint = `/store-products/?sort_by=quantity`;
+            if (promoVal !== 'all') endpoint += `&promotional=${promoVal === 'yes' ? 'true' : 'false'}`;
+
+            const dbStoreProducts = await apiFetch(endpoint);
+            mockStoreProducts = dbStoreProducts.map(sp => ({
+                upc: sp.upc || sp.UPC,
+                id_product: sp.id_product,
+                selling_price: parseFloat(sp.selling_price),
+                products_number: sp.products_number,
+                promotional_product: sp.promotional_product
+            }));
+            renderStoreProducts(mockStoreProducts);
+        } else if (pageType === 'checks') {
+            const cashierVal = document.getElementById('filterCheckCashier').value;
+            const startVal = document.getElementById('filterCheckStart').value;
+            const endVal = document.getElementById('filterCheckEnd').value;
+            savedFilters['checks'].cashier = cashierVal;
+            savedFilters['checks'].start = startVal;
+            savedFilters['checks'].end = endVal;
+
+            let params = [];
+            if (cashierVal !== 'all') params.push(`id_employee=${encodeURIComponent(cashierVal)}`);
+            if (startVal) params.push(`start_date=${encodeURIComponent(startVal)}`);
+            if (endVal) params.push(`end_date=${encodeURIComponent(endVal)}`);
+            endpoint = `/checks/${params.length ? '?' + params.join('&') : ''}`;
+
+            const dbChecks = await apiFetch(endpoint);
+            mockChecks = dbChecks.map(c => ({
+                check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
+                print_date: new Date(c.print_date).toLocaleString('uk-UA'),
+                sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat)
+            }));
+            renderChecks(mockChecks);
+        }
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
+        showBeautifulAlert('Фільтри застосовано!', 'success');
+
+    } catch (error) {
+        showBeautifulAlert('Помилка фільтрації', 'danger');
+    }
+};
+
+window.openFilterModal = (pageType) => {
+    document.querySelectorAll('.filter-section').forEach(el => el.style.display = 'none');
+
+    const section = document.getElementById(`filter-${pageType}`);
+    if (section) section.style.display = 'block';
+
+    const titles = {
+        'employees': 'Вибір персоналу',
+        'customers': 'Фільтр за знижкою',
+        'products': 'Вибір категорій',
+        'store-products': 'Фільтр акцій',
+        'checks': 'Звіти за період'
+    };
+    document.getElementById('filterModalTitle').textContent = titles[pageType] || 'Фільтрація';
+
+    // ВІДНОВЛЕННЯ СТАНУ З ПАМ'ЯТІ (savedFilters)
+    if (pageType === 'employees') {
+        const managerCheck = document.getElementById('fRoleManager');
+        const cashierCheck = document.getElementById('fRoleCashier');
+        if (managerCheck) managerCheck.checked = savedFilters['employees'].manager;
+        if (cashierCheck) cashierCheck.checked = savedFilters['employees'].cashier;
+    }
+
+    if (pageType === 'customers') {
+        const percentInput = document.getElementById('filterPercent');
+        if (percentInput) percentInput.value = savedFilters['customers'].percent;
+    }
+
+    if (pageType === 'products') {
+        const container = document.getElementById('filterCategoryList');
+        if (container) {
+            container.innerHTML = mockCategories.map(cat => {
+                const isChecked = savedFilters['products'].categories === null
+                    ? true
+                    : savedFilters['products'].categories.includes(cat.category_number.toString());
+
+                return `
+                <div class="form-check mb-1">
+                    <input class="form-check-input zlagoda-checkbox" type="checkbox" value="${cat.category_number}" id="catCheck${cat.category_number}" ${isChecked ? 'checked' : ''}>
+                    <label class="form-check-label small" for="catCheck${cat.category_number}">${cat.category_name}</label>
+                </div>
+            `}).join('');
+        }
+    }
+
+    if (pageType === 'store-products') {
+        const promoSelect = document.getElementById('filterPromoSelect');
+        if (promoSelect) promoSelect.value = savedFilters['store-products'].promo;
+    }
+
+    if (pageType === 'checks') {
+        const select = document.getElementById('filterCheckCashier');
+        if (select && select.options.length <= 1) {
+            const cashiers = mockEmployees.filter(e => e.role === 'Касир');
+            cashiers.forEach(c => {
+                const opt = new Option(`${c.surname} ${c.name[0]}.`, c.id);
+                select.add(opt);
+            });
+        }
+
+        if (select) select.value = savedFilters['checks'].cashier;
+
+        const startInput = document.getElementById('filterCheckStart');
+        if (startInput) startInput.value = savedFilters['checks'].start;
+
+        const endInput = document.getElementById('filterCheckEnd');
+        if (endInput) endInput.value = savedFilters['checks'].end;
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).show();
+};
+
+window.changeFilterPercent = (delta) => {
+    const input = document.getElementById('filterPercent');
+    if (!input) return;
+    let val = (parseInt(input.value) || 0) + delta;
+    input.value = Math.max(0, Math.min(100, val));
+};

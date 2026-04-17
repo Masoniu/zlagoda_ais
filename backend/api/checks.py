@@ -67,7 +67,7 @@ async def create_check(
                                             check_data.card_number, print_date, sum_total, vat)
 
             await conn.executemany('''
-                                   INSERT INTO sale (upc AS "UPC", check_number, product_number, selling_price)
+                                   INSERT INTO sale (upc, check_number, product_number, selling_price)
                                    VALUES ($1, $2, $3, $4)
                                    ''', sales_to_insert)
 
@@ -77,43 +77,6 @@ async def create_check(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка сервера: {str(e)}")
-
-
-@router.get("/", response_model=List[EmployeeResponse])
-async def get_all_employees(
-        role: Optional[str] = Query(None, description="Фільтр за посадою (напр. 'Касир')"),
-        conn: asyncpg.Connection = Depends(get_db_conn),
-        current_user: dict = Depends(get_current_user)
-):
-    if current_user["empl_role"] != "Менеджер":
-        raise HTTPException(status_code=403, detail="Тільки Менеджер може переглядати працівників")
-
-    query = "SELECT * FROM employee WHERE 1=1"
-    args = []
-
-    if role:
-        args.append(role)
-        query += f" AND empl_role = ${len(args)}"
-
-    query += " ORDER BY empl_surname"
-
-    result = await conn.fetch(query, *args)
-    return [dict(r) for r in result]
-
-@router.get("/search/contact-info")
-async def get_employee_contact_info(
-        surname: str = Query(..., description="Прізвище працівника"),
-        conn: asyncpg.Connection = Depends(get_db_conn),
-        current_user: dict = Depends(get_current_user)
-):
-    if current_user["empl_role"] != "Менеджер":
-        raise HTTPException(status_code=403, detail="Тільки Менеджер має доступ до контактів")
-
-    result = await conn.fetch(
-        "SELECT empl_surname, empl_name, phone_number, city, street, zip_code FROM employee WHERE empl_surname ILIKE $1",
-        f"%{surname}%"
-    )
-    return [dict(r) for r in result]
 
 
 @router.delete("/{check_number}", status_code=status.HTTP_204_NO_CONTENT)

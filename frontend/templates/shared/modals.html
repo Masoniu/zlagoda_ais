@@ -75,179 +75,70 @@
     <div class="modal-content border-0 rounded-4 shadow">
       <div class="modal-header border-0 pb-0">
         <h5 class="modal-title fw-bold" id="filterModalTitle">Фільтрація</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-4">
-        <form id="filterForm">
-          <div
-            id="filter-employees"
-            class="filter-section mb-3"
-            style="display: none"
-          >
-            <label class="form-label small fw-bold mb-2"
-              >Посада працівника</label
-            >
-            <div class="d-flex gap-3">
-              <div class="form-check">
-                <input
-                  class="form-check-input zlagoda-checkbox"
-                  type="checkbox"
-                  value="Менеджер"
-                  id="fRoleManager"
-                  checked
-                />
-                <label class="form-check-label" for="fRoleManager"
-                  >Менеджер</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input zlagoda-checkbox"
-                  type="checkbox"
-                  value="Касир"
-                  id="fRoleCashier"
-                  checked
-                />
-                <label class="form-check-label" for="fRoleCashier">Касир</label>
-              </div>
-            </div>
-          </div>
 
-          <div
-            id="filter-customers"
-            class="filter-section mb-3"
-            style="display: none"
-          >
-            <label class="form-label small fw-bold mb-2"
-              >Знижка карти (%)</label
-            >
-            <div
-              class="d-flex border rounded-2"
-              style="
-                border-color: var(--text-color) !important;
-                width: 140px;
-                overflow: hidden;
-              "
-            >
-              <button
-                type="button"
-                class="btn btn-sm btn-qty-pos border-0 rounded-0 px-3 fs-5"
-                onclick="changeFilterPercent(-1)"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                id="filterPercent"
-                class="form-control border-0 text-center fw-bold rounded-0 p-0"
-                value="0"
-                style="color: var(--text-color); box-shadow: none"
-              />
-              <button
-                type="button"
-                class="btn btn-sm btn-qty-pos border-0 rounded-0 px-3 fs-5"
-                onclick="changeFilterPercent(1)"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div
-            id="filter-products"
-            class="filter-section mb-3"
-            style="display: none"
-          >
-            <label class="form-label small fw-bold mb-2"
-              >Категорії товарів</label
-            >
-            <div
-              id="filterCategoryList"
-              class="border rounded-3 p-3 bg-light"
-              style="max-height: 200px; overflow-y: auto"
-            ></div>
-          </div>
-
-          <div
-            id="filter-store-products"
-            class="filter-section mb-3"
-            style="display: none"
-          >
-            <label class="form-label small fw-bold mb-2">Тип пропозиції</label>
-            <div class="form-check mb-2">
-              <input
-                class="form-check-input zlagoda-checkbox"
-                type="checkbox"
-                id="fPromoYes"
-                checked
-              />
-              <label class="form-check-label" for="fPromoYes"
-                >Акційні товари (знижка 20%)</label
-              >
+        <div id="filter-employees" class="filter-section mb-3" style="display: none;">
+          <label class="form-label small fw-bold mb-2">Посада працівника</label>
+          <div class="d-flex gap-3">
+            <div class="form-check">
+              <input class="form-check-input zlagoda-checkbox" type="checkbox" value="Менеджер" id="fRoleManager" checked>
+              <label class="form-check-label" for="fRoleManager">Менеджер</label>
             </div>
             <div class="form-check">
-              <input
-                class="form-check-input zlagoda-checkbox"
-                type="checkbox"
-                id="fPromoNo"
-                checked
-              />
-              <label class="form-check-label" for="fPromoNo"
-                >Звичайні товари</label
-              >
+              <input class="form-check-input zlagoda-checkbox" type="checkbox" value="Касир" id="fRoleCashier" checked>
+              <label class="form-check-label" for="fRoleCashier">Касир</label>
             </div>
           </div>
+        </div>
 
-          <div
-            id="filter-checks"
-            class="filter-section mb-3"
-            style="display: none"
-          >
-            <label class="form-label small fw-bold mb-2"
-              >Касир, що створив чек</label
-            >
-            <select class="form-select auth-input mb-4" id="filterCheckCashier">
-              <option value="">Усі касири</option>
-            </select>
+        <div id="filter-customers" class="filter-section mb-3" style="display: none;">
+          <label class="form-label small fw-bold mb-2">Знижка клієнта (%)</label>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-light px-3 fw-bold" onclick="changeFilterPercent(-5)">−</button>
+            <input type="number" class="form-control auth-input text-center" id="filterPercent" min="0" max="100" value="0" style="width: 80px;">
+            <button type="button" class="btn btn-light px-3 fw-bold" onclick="changeFilterPercent(5)">+</button>
+            <span class="text-muted small ms-1">0 = показати всіх</span>
+          </div>
+        </div>
 
-            <label class="form-label small fw-bold mb-2">Період продажу</label>
-            <div class="row g-2">
-              <div class="col-6">
-                <div class="form-text small text-left">З дати</div>
-                <input
-                  type="date"
-                  class="form-control auth-input"
-                  id="filterDateFrom"
-                />
-              </div>
-              <div class="col-6">
-                <div class="form-text small text-left">По дату</div>
-                <input
-                  type="date"
-                  class="form-control auth-input"
-                  id="filterDateTo"
-                />
-              </div>
+        <div id="filter-products" class="filter-section mb-3" style="display: none;">
+          <label class="form-label small fw-bold mb-2">Категорія товару</label>
+          <div id="filterCategoryList" style="max-height: 220px; overflow-y: auto;"></div>
+        </div>
+
+        <div id="filter-checks" class="filter-section mb-3" style="display: none;">
+          <label class="form-label small fw-bold mb-2">Касир</label>
+          <select class="form-select auth-input mb-3" id="filterCheckCashier">
+            <option value="all">Всі касири</option>
+          </select>
+          <label class="form-label small fw-bold mb-2">Період</label>
+          <div class="d-flex gap-2">
+            <div class="flex-fill">
+              <label class="form-label small text-muted">З</label>
+              <input type="datetime-local" class="form-control auth-input" id="filterCheckStart">
+            </div>
+            <div class="flex-fill">
+              <label class="form-label small text-muted">По</label>
+              <input type="datetime-local" class="form-control auth-input" id="filterCheckEnd">
             </div>
           </div>
+        </div>
 
-          <div class="text-end border-top pt-3 mt-4">
-            <button
-              type="button"
-              class="btn btn-light me-2 fw-bold"
-              data-bs-dismiss="modal"
-            >
-              Скасувати
-            </button>
-            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">
-              Застосувати фільтри
-            </button>
-          </div>
-        </form>
+        <div id="filter-store-products" class="filter-section mb-3" style="display: none;">
+          <label class="form-label small fw-bold mb-2">Наявність акції</label>
+          <select class="form-select auth-input" id="filterPromoSelect">
+            <option value="all">Всі товари</option>
+            <option value="yes">Тільки акційні</option>
+            <option value="no">Без акції</option>
+          </select>
+        </div>
+
+        <div class="text-end border-top pt-3 mt-4">
+          <button type="button" class="btn btn-light me-2 fw-bold" data-bs-dismiss="modal">Скасувати</button>
+          <button type="button" class="btn btn-primary px-4 py-2 fw-bold" onclick="applyFilters()">Застосувати фільтри</button>
+        </div>
       </div>
     </div>
   </div>
