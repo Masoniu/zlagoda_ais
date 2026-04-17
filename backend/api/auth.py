@@ -4,34 +4,34 @@ from backend.schemas.employee import EmployeeLogin
 from backend.core.database import SessionLocal
 from backend.services.auth import authenticate_user
 from backend.core.security import create_access_token
+from fastapi.security import OAuth2PasswordRequestForm
 
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 async def get_db():
     async with SessionLocal() as session:
         yield session
 
+
 @router.post("/login")
 async def login(
-    user_credentials: EmployeeLogin,
-    db: AsyncSession = Depends(get_db)
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: AsyncSession = Depends(get_db)
 ):
-    user = await authenticate_user(db, user_credentials.id_employee, user_credentials.password)
+    user = await authenticate_user(db, form_data.username, form_data.password)
 
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect ID or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(
-        data={"sub": user.id_employee, "role": user.empl_role}
-    )
+    token = create_access_token(data={"sub": user.id_employee})
 
     return {
-        "access_token": access_token,
+        "access_token": token,
         "token_type": "bearer",
-        "role": user.empl_role,
-        "name": user.empl_name
+        "role": user.empl_role
     }

@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -8,7 +8,8 @@ from backend.core.database import get_db
 from backend.core.security import SECRET_KEY, ALGORITHM
 from backend.models.employee import Employee
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 async def get_current_user(
