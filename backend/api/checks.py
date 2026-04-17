@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Query
+from typing import Optional
+from datetime import datetime
 import asyncpg
 from decimal import Decimal
 from datetime import datetime, timezone
@@ -104,3 +107,112 @@ async def delete_check(
         raise HTTPException(status_code=404, detail="Чек не знайдено")
 
     return None
+
+
+@router.get("/")
+async def get_checks(
+        start_date: Optional[datetime] = Query(None, description="Початкова дата (YYYY-MM-DD)"),
+        end_date: Optional[datetime] = Query(None, description="Кінцева дата (YYYY-MM-DD)"),
+        id_employee: Optional[str] = Query(None, description="ID касира (тільки для Менеджера)"),
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    query = 'SELECT * FROM "check" WHERE 1=1'
+    args = []
+    if current_user["empl_role"] == "Касир":
+        args.append(current_user["id_employee"])
+        query += f' AND id_employee = ${len(args)}'
+    elif id_employee:
+        args.append(id_employee)
+        query += f' AND id_employee = ${len(args)}'
+
+    if start_date:
+        args.append(start_date)
+        query += f' AND print_date >= ${len(args)}'
+    if end_date:
+        args.append(end_date)
+        query += f' AND print_date <= ${len(args)}'
+
+    query += ' ORDER BY print_date DESC'
+
+    result = await conn.fetch(query, *args)
+    return [dict(r) for r in result]
+
+@router.get("/analytics/total-sum")
+async def get_total_sales_sum(
+        start_date: Optional[datetime] = Query(None),
+        end_date: Optional[datetime] = Query(None),
+        id_employee: Optional[str] = Query(None),
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Тільки Менеджер має доступ до фінансової аналітики")
+
+    query = 'SELECT COALESCE(SUM(sum_total), 0) AS total_sum FROM "check" WHERE 1=1'
+    args = []
+
+    if id_employee:
+        args.append(id_employee)
+        query += f' AND id_employee = ${len(args)}'
+    if start_date:
+        args.append(start_date)
+        query += f' AND print_date >= ${len(args)}'
+    if end_date:
+        args.append(end_date)
+        query += f' AND print_date <= ${len(args)}'
+
+    result = await conn.fetchval(query, *args)
+    return {"total_sum": result}
+
+@router.get("/analytics/total-quantity/{upc}")
+async def get_total_product_quantity(
+        upc: str,
+        start_date: Optional[datetime] = Query(None),
+        end_date: Optional[datetime] = Query(None),
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Тільки Менеджер має доступ до аналітики товарів")
+    query = '''
+            SELECT COALESCE(SUM(s.product_number), 0) AS total_sold
+            FROM sale s
+                     JOIN "check" c ON s.check_number = c.check_number
+            WHERE s.upc = $1 \
+            '''
+    args = [upc]
+
+    if start_date:
+        args.append(start_date)
+        query += f' AND c.print_date >= ${len(args)}'
+    if end_date:
+        args.append(end_date)
+        query += f' AND c.print_date <= ${len(args)}'
+
+    result = await conn.fetchval(query, *args)
+    return {"upc": upc, "total_sold": result}
+
+@router.get("/{check_number}/details")
+async def get_check_details(
+        check_number: str,
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    check = await conn.fetchrow('SELECT * FROM "check" WHERE check_number = $1', check_number)
+    if not check:
+        raise HTTPException(status_code=404, detail="Чек не знайдено")
+
+    if current_user["empl_role"] == "Касир" and check["id_employee"] != current_user["id_employee"]:
+        raise HTTPException(status_code=403, detail="Ви не можете переглядати чеки інших касирів")
+    items_query = '''
+                  SELECT s.upc, p.product_name, s.product_number AS quantity, s.selling_price
+                  FROM sale s
+                           JOIN store_product sp ON s.upc = sp.upc
+                           JOIN product p ON sp.id_product = p.id_product
+                  WHERE s.check_number = $1 \
+                  '''
+    items = await conn.fetch(items_query, check_number)
+    response = dict(check)
+    response["items"] = [dict(item) for item in items]
+    return response
