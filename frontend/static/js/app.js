@@ -273,7 +273,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const navPlaceholder = document.getElementById('navbar_placeholder');
     if (navPlaceholder) {
         const role = sessionStorage.getItem('userRole');
-        const navFile = (role === 'Касир') ? 'cash_navbar.html' : 'man_navbar.html';
+        if (role == 'Касир') {
+            document.body.classList.add('cashier-mode');
+        }
+        const navFile = (role === 'Касир') ? '../shared/cash_navbar.html' : '../shared/man_navbar.html';
         
         try {
             const res = await fetch(navFile);
