@@ -1,21 +1,22 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+from decimal import Decimal
 
 class StoreProductBase(BaseModel):
-    UPC: str = Field(..., max_length=12)
+    upc_prom: Optional[str] = Field(None, max_length=12)
     id_product: int
-    selling_price: float
-    products_number: int
-    promotional_product: bool = False
+    selling_price: Decimal = Field(..., ge=0)
+    products_number: int = Field(..., ge=0)
+    promotional_product: bool
 
 class StoreProductCreate(StoreProductBase):
+    UPC: str = Field(..., max_length=12)
+
+class StoreProductUpdate(StoreProductBase):
     pass
 
-class StoreProductUpdate(BaseModel):
-    selling_price: Optional[float] = None
-    products_number: Optional[int] = None
-    promotional_product: Optional[bool] = None
-
 class StoreProductResponse(StoreProductBase):
+    UPC: str = Field(..., alias="UPC")
     class Config:
         from_attributes = True
+        populate_by_name = True
