@@ -15,10 +15,11 @@ router = APIRouter()
 async def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
 
+
 @router.get("/", response_model=List[EmployeeResponse])
 async def get_all_employees(
         surname: Optional[str] = Query(None, description="Пошук за прізвищем"),
-        role: Optional[List[str]] = Query(None, description="Фільтр за посадами (масив)"),
+        sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
@@ -27,16 +28,13 @@ async def get_all_employees(
 
     query = "SELECT * FROM employee WHERE 1=1"
     args = []
-
     if surname:
         args.append(f"%{surname}%")
         query += f" AND empl_surname ILIKE ${len(args)}"
 
-    if role:
-        args.append(role)
-        query += f" AND empl_role = ANY(${len(args)}::varchar[])"
+    order = "DESC" if sort_order.lower() == "desc" else "ASC"
+    query += f" ORDER BY empl_surname {order}"
 
-    query += " ORDER BY empl_surname"
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
