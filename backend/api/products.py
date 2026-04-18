@@ -16,20 +16,31 @@ async def get_products(
         name: Optional[str] = Query(None, description="Пошук за назвою товару"),
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
-    query = "SELECT * FROM product WHERE 1=1"
+    query = """
+            SELECT p.id_product, \
+                   p.category_number, \
+                   p.product_name,
+                   p.manufacturer, \
+                   p.characteristics, \
+                   c.category_name
+            FROM product p
+                     JOIN category c ON p.category_number = c.category_number
+            WHERE 1 = 1 \
+            """
     args = []
 
     if category_number is not None:
         args.append(category_number)
-        query += f" AND category_number = ${len(args)}"
+        query += f" AND p.category_number = ${len(args)}"
 
     if name:
         args.append(f"%{name}%")
-        query += f" AND product_name ILIKE ${len(args)}"
-    query += " ORDER BY product_name"
+        query += f" AND p.product_name ILIKE ${len(args)}"
+
+    query += " ORDER BY p.product_name"
+
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
-
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
