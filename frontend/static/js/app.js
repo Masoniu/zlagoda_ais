@@ -1147,10 +1147,12 @@ window.applyFilters = async () => {
         } else if (pageType === 'customers') {
             const percentVal = document.getElementById('filterPercent').value;
             savedFilters['customers'].percent = percentVal;
-
-            // Бекенд чекає параметр percent. Якщо пустий - вантажимо всіх.
-            endpoint = percentVal ? `/customer-cards/?percent=${percentVal}` : '/customer-cards/';
-
+            // Якщо 0 або пусто - вантажимо всіх. Інакше - шукаємо конкретний відсоток.
+            if (!percentVal || percentVal === "0") {
+                endpoint = '/customer-cards/';
+            } else {
+                endpoint = `/customer-cards/?percent=${percentVal}`;
+            }
             const dbCustomers = await apiFetch(endpoint);
             mockCustomers = dbCustomers.map(c => ({
                 card_number: c.card_number,
