@@ -101,6 +101,14 @@ async function apiMutate(endpoint, method, data = null) {
     }
 }
 
+async function fetchAndDisplayTotalSum(queryString = '') {
+    const data = await apiFetch(`/checks/analytics/total-sum${queryString}`);
+    const sumElement = document.getElementById('totalChecksSum');
+    if (sumElement && data) {
+        sumElement.textContent = parseFloat(data.total_sum).toFixed(2);
+    }
+}
+
 async function loadRealDataFromDB() {
     const isPosPage = document.getElementById('posScanForm') !== null;
 
@@ -209,12 +217,17 @@ async function loadRealDataFromDB() {
             const url = query ? `/checks/?check_number=${encodeURIComponent(query)}` : '/checks/';
             const dbChecks = await apiFetch(url);
             mockChecks = dbChecks.map(c => ({
-                check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
+                check_number: c.check_number,
+                id_employee: c.id_employee,
+                card_number: c.card_number,
                 print_date: new Date(c.print_date).toLocaleString('uk-UA'),
-                sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat),
-                cashier_name: c.cashier_name // БЕРЕМО З БД!
+                sum_total: parseFloat(c.sum_total),
+                vat: parseFloat(c.vat),
+                cashier_name: c.cashier_name
             }));
             renderChecks(mockChecks);
+            const sumParams = query ? `?check_number=${encodeURIComponent(query)}` : '';
+            await fetchAndDisplayTotalSum(sumParams);
         };
         await loadChecks();
 
@@ -1429,6 +1442,7 @@ window.applyFilters = async () => {
                 cashier_name: c.cashier_name // з БД
             }));
             renderChecks(mockChecks);
+            await fetchAndDisplayTotalSum(params.toString() ? '?' + params.toString() : '');
         }
         bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
         showBeautifulAlert('Фільтри застосовано!', 'success');
