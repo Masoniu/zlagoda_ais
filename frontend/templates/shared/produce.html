@@ -66,19 +66,10 @@
             <thead class="zlagoda_table_header">
               <tr>
                 <th class="ps-4">ID</th>
-                <th
-                  class="sortable-header"
-                  onclick="
-                    sortTableData(
-                      mockProducts,
-                      'name',
-                      'string',
-                      renderProducts,
-                    )
-                  "
-                >
-                  Назва товару
-                  <i class="bi bi-arrow-down-up small text-muted ms-1"></i>
+                <th class="sortable-header" onclick="handleSort('products')">
+                    Назва товару
+                    <i class="bi bi-arrow-down-up small text-muted ms-1">
+                    </i>
                 </th>
                 <th>Виробник</th>
                 <th>Характеристики</th>
