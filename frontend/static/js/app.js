@@ -281,7 +281,6 @@ function renderProducts(data) {
     const tableBody = document.getElementById('productTableBody');
     if (!tableBody) return;
     tableBody.innerHTML = data.map(prod => {
-        const category = mockCategories.find(c => c.category_number === prod.category_id);
         const catName = prod.category_name || "Невідомо";
         return `
             <tr>
@@ -302,7 +301,6 @@ function renderStoreProducts(data) {
     const tableBody = document.getElementById('storeProductTableBody');
     if (!tableBody) return;
     tableBody.innerHTML = data.map(sp => {
-        const productInfo = mockProducts.find(p => p.id === sp.id_product);
         const productName = sp.product_name || "Невідомий товар";
         const promoBadge = sp.promotional_product
             ? '<span class="badge bg-success bg-opacity-10 text-success border border-success p-2 fs-6">Так</span>'
@@ -427,8 +425,7 @@ function populatePosDatalists() {
     if (upcList) {
         upcList.innerHTML = '';
         mockStoreProducts.forEach(sp => {
-            const prod = mockProducts.find(p => p.id === sp.id_product);
-            const name = prod ? prod.name : 'Невідомий товар';
+            const name = sp.product_name || 'Невідомий товар';
             upcList.innerHTML += `<option value="${sp.upc}">${name} (Ціна: ${sp.selling_price} грн, Залишок: ${sp.products_number} шт)</option>`;
         });
     }
@@ -1088,10 +1085,8 @@ function prepareEditCustomer(cardNumber) {
 function viewCheckDetails(checkNumber) {
     const chk = mockChecks.find(c => c.check_number === checkNumber);
     if (!chk) return;
-
-    const empl = mockEmployees.find(e => e.id === chk.id_employee);
     document.getElementById('v-check-id').textContent = `Чек #${chk.check_number}`;
-    document.getElementById('v-check-cashier').textContent = empl ? `${empl.surname} ${empl.name}` : "Невідомий";
+    document.getElementById('v-check-cashier').textContent = chk.cashier_name || "Невідомий";
     document.getElementById('v-check-date').textContent = chk.print_date;
 
     apiFetch(`/checks/${checkNumber}/details`).then(data => {
