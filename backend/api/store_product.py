@@ -46,16 +46,16 @@ async def get_all_store_products(
         current_user: dict = Depends(get_current_user)
 ):
     query = """
-            SELECT sp.upc      AS "UPC",
-                   sp.upc_prom AS "UPC_prom",
+            SELECT sp.upc      AS "UPC", 
+                   sp.upc_prom AS "UPC_prom", 
                    sp.id_product,
-                   sp.selling_price,
-                   sp.products_number,
+                   sp.selling_price, 
+                   sp.products_number, 
                    sp.promotional_product,
-                   p.product_name 
+                   p.product_name
             FROM store_product sp
-            JOIN product p ON sp.id_product = p.id_product
-            WHERE 1 = 1
+                     JOIN product p ON sp.id_product = p.id_product
+            WHERE 1 = 1 
             """
     args = []
     if promotional is not None:
