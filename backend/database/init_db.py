@@ -13,7 +13,6 @@ async def init_db():
     try:
         print("Очищення та створення таблиць через SQL...")
         async with conn.transaction():
-            # 0. Видаляємо всі існуючі таблиці (CASCADE видаляє зв'язки)
             await conn.execute("""
                 DROP TABLE IF EXISTS sale CASCADE;
                 DROP TABLE IF EXISTS "check" CASCADE;
@@ -78,11 +77,11 @@ async def init_db():
                 );
             """)
 
-            # 5. Товар у магазині (Партія на полиці)
+            # 5. store_product
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS store_product (
                     upc VARCHAR(12) PRIMARY KEY,
-                    upc_prom VARCHAR(12) REFERENCES store_product(upc) ON DELETE NO ACTION ON UPDATE CASCADE,
+                    upc_prom VARCHAR(12) REFERENCES store_product(upc) ON DELETE SET NULL ON UPDATE CASCADE,
                     id_product INT REFERENCES product(id_product) ON DELETE NO ACTION ON UPDATE CASCADE,
                     selling_price DECIMAL(10, 4) NOT NULL CHECK (selling_price >= 0),
                     products_number INT NOT NULL CHECK (products_number >= 0),
@@ -90,7 +89,7 @@ async def init_db():
                 );
             """)
 
-            # 6. Чек (Цього блоку тобі бракувало!)
+            # 6. Чек
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS "check" (
                     check_number VARCHAR(10) PRIMARY KEY,
@@ -162,7 +161,7 @@ async def init_db():
         print("Базу даних ініціалізовано!")
 
     except Exception as e:
-        print(f"❌ Помилка ініціалізації: {e}")
+        print(f"Помилка ініціалізації: {e}")
     finally:
         await conn.close()
 
