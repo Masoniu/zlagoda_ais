@@ -514,3 +514,15 @@ body.cashier-mode .cashier-hide-col {
   box-shadow: 0 10px 25px rgba(55, 31, 38, 0.2) !important;
   color: var(--primary-color) !important;
 }
+
+.toast.bg-danger {
+  background-color: #f3dcdc !important;
+  border: 2px solid #b23a3a !important;
+  box-shadow: 0 10px 25px rgba(55, 31, 38, 0.2) !important;
+  color: #b23a3a !important;
+}
+
+.toast.bg-success .btn-close-white,
+.toast.bg-danger .btn-close-white {
+  filter: invert(1) grayscale(100%) brightness(40%) !important;
+}
