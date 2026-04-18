@@ -82,22 +82,31 @@ async def create_check(
 @router.delete("/{check_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_check(
         check_number: str,
+        return_items: bool = Query(False, description="Чи повертати товари на полицю"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
-        ):
+):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Тільки Менеджер може видаляти чеки"
         )
 
-    result = await conn.fetchval(
-        'DELETE FROM "check" WHERE check_number = $1 RETURNING check_number',
-        check_number
-    )
+    async with conn.transaction():
+        check_exists = await conn.fetchval('SELECT 1 FROM "check" WHERE check_number = $1', check_number)
+        if not check_exists:
+            raise HTTPException(status_code=404, detail="Чек не знайдено")
 
-    if not result:
-        raise HTTPException(status_code=404, detail="Чек не знайдено")
+        if return_items:
+            sales = await conn.fetch('SELECT upc, product_number FROM sale WHERE check_number = $1', check_number)
+            for sale in sales:
+                await conn.execute('''
+                                   UPDATE store_product
+                                   SET products_number = products_number + $1
+                                   WHERE upc = $2
+                                   ''', sale["product_number"], sale["upc"])
+
+        await conn.execute('DELETE FROM "check" WHERE check_number = $1', check_number)
 
     return None
 
