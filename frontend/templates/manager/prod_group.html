@@ -38,11 +38,12 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
-          <button
-            class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
-            data-bs-toggle="modal"
-            data-bs-target="#addCategoryModal"
-          >
+          <button class="btn btn-outline-secondary fw-bold px-3 py-2 shadow-sm rounded-3 bg-white"
+                  onclick="generateReport('Категорії товарів', 'categoryTableBody')">
+            <i class="bi bi-printer me-2"></i>Друк звіту
+          </button>
+
+          <button class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
             + Додати категорію
           </button>
         </div>
