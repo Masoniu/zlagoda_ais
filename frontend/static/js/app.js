@@ -573,6 +573,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         };
+
+        const btnDeleteOnly = document.getElementById('btnDeleteOnly');
+        const btnDeleteAndReturn = document.getElementById('btnDeleteAndReturn');
+        const executeCheckDeletion = async (returnItems) => {
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCheckConfirmModal'));
+            const originalText1 = btnDeleteOnly.innerHTML;
+            const originalText2 = btnDeleteAndReturn.innerHTML;
+            btnDeleteOnly.disabled = true;
+            btnDeleteAndReturn.disabled = true;
+            if (returnItems) btnDeleteAndReturn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Видалення...';
+            else btnDeleteOnly.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Видалення...';
+            const res = await apiMutate(`/checks/${itemToDeleteId}?return_items=${returnItems}`, 'DELETE');
+            btnDeleteOnly.disabled = false;
+            btnDeleteAndReturn.disabled = false;
+            btnDeleteOnly.innerHTML = originalText1;
+            btnDeleteAndReturn.innerHTML = originalText2;
+
+            if (res.success) {
+                modalInstance.hide();
+                await loadRealDataFromDB();
+                showBeautifulAlert('Чек успішно видалено!', 'success');
+            }
+        };
+        if (btnDeleteOnly) btnDeleteOnly.onclick = () => executeCheckDeletion(false);
+        if (btnDeleteAndReturn) btnDeleteAndReturn.onclick = () => executeCheckDeletion(true);
     }
 
     // Делегування подій для таблиць (Кліки на Редагувати/Видалити)
@@ -896,7 +921,12 @@ function setupCustomerForm() {
 function deleteCategory(id) { itemToDeleteId = id; itemToDeleteType = 'category'; bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal')).show(); }
 function deleteProduct(id) { itemToDeleteId = id; itemToDeleteType = 'product'; bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal')).show(); }
 function deleteStoreProduct(upc) { itemToDeleteId = upc; itemToDeleteType = 'store_product'; bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal')).show(); }
-function deleteCheck(checkNumber) { itemToDeleteId = checkNumber; itemToDeleteType = 'check'; bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal')).show(); }
+
+function deleteCheck(checkNumber) {
+    itemToDeleteId = checkNumber;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCheckConfirmModal')).show();
+}
+
 function deleteEmployee(id) { itemToDeleteId = id; itemToDeleteType = 'employee'; bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal')).show(); }
 function deleteCustomer(id) { itemToDeleteId = id; itemToDeleteType = 'customer'; bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal')).show(); }
 
