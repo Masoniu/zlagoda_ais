@@ -336,8 +336,19 @@ function renderStoreProducts(data) {
 function renderChecks(data) {
     const tableBody = document.getElementById('checkTableBody');
     if (!tableBody) return;
+    const totalSum = data.reduce((sum, chk) => sum + chk.sum_total, 0);
+    const sumElement = document.getElementById('totalChecksSum');
+    if (sumElement) sumElement.textContent = totalSum.toFixed(2);
+
+    const userRole = sessionStorage.getItem('userRole');
+
     tableBody.innerHTML = data.map(chk => {
         const cashierName = chk.cashier_name || "Невідомий";
+
+        const deleteBtnHtml = userRole === 'Менеджер'
+            ? `<button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')">Видалити</button>`
+            : '';
+
         return `
             <tr>
                 <td class="ps-4">#${chk.check_number}</td>
@@ -349,7 +360,7 @@ function renderChecks(data) {
                     <button class="btn btn-sm p-1 me-2" onclick="viewCheckDetails('${chk.check_number}')" title="Деталі чека">
                         <i class="bi bi-receipt icon-zlagoda fs-5"></i>
                     </button>
-                    <button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')">Видалити</button>
+                    ${deleteBtnHtml}
                 </td>
             </tr>`;
     }).join('');
