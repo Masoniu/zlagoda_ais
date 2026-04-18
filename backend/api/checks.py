@@ -152,6 +152,7 @@ async def get_checks(
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
+
 @router.get("/analytics/total-sum")
 async def get_total_sales_sum(
         start_date: Optional[datetime] = Query(None),
@@ -160,15 +161,17 @@ async def get_total_sales_sum(
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
-    if current_user["empl_role"] != "Менеджер":
-        raise HTTPException(status_code=403, detail="Тільки Менеджер має доступ до фінансової аналітики")
 
     query = 'SELECT COALESCE(SUM(sum_total), 0) AS total_sum FROM "check" WHERE 1=1'
     args = []
 
-    if id_employee:
+    if current_user["empl_role"] == "Касир":
+        args.append(current_user["id_employee"])
+        query += f' AND id_employee = ${len(args)}'
+    elif id_employee:
         args.append(id_employee)
         query += f' AND id_employee = ${len(args)}'
+
     if start_date:
         args.append(start_date)
         query += f' AND print_date >= ${len(args)}'
