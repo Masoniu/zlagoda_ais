@@ -13,6 +13,7 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     category_number: Optional[int] = None
     product_name: Optional[str] = None
+    manufacturer: Optional[str] = None
     characteristics: Optional[str] = None
 
 class ProductResponse(ProductBase):

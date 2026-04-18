@@ -9,7 +9,7 @@ from backend.api.dep import get_current_user
 router = APIRouter()
 
 
-@router.get("/", response_model=list[CategoryResponse])
+@router.get("/", response_model=list[CategoryResponse], dependencies=[Depends(get_current_user)])
 async def get_all_categories(
         category_name: Optional[str] = Query(None, description="Пошук за назвою"),
         sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),

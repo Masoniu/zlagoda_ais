@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pydantic import BaseModel, Field, field_validator
 from datetime import date
 from typing import Optional
@@ -7,7 +8,7 @@ class EmployeeBase(BaseModel):
     empl_name: str = Field(..., max_length=50)
     empl_patronymic: Optional[str] = Field(None, max_length=50)
     empl_role: str = Field(..., max_length=50)
-    salary: float = Field(..., ge=0)
+    salary: Decimal = Field(..., ge=0)
     date_of_start: date
     date_of_birth: date
     phone_number: str = Field(..., max_length=13)
