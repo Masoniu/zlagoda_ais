@@ -15,6 +15,9 @@ async def get_products(
         sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
+    if sort_order.lower() not in ["asc", "desc"]:
+        sort_order = "asc"
+    
     query = """
         SELECT p.id_product, p.category_number, p.product_name, 
                p.manufacturer, p.characteristics, c.category_name 
@@ -43,19 +46,25 @@ async def create_product(
         current_user: dict = Depends(get_current_user)
 ):
     if current_user["empl_role"] != "Менеджер":
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Тільки Менеджер може створювати товари")
 
     cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1", product.category_number)
     if not cat_check:
-        raise HTTPException(status_code=400, detail="Category not found")
+        raise HTTPException(status_code=400, detail="Категорія не знайдена")
 
-    new_product = await conn.fetchrow("""
-                                      INSERT INTO product (category_number, product_name, manufacturer, characteristics)
-                                      VALUES ($1, $2, $3, $4) RETURNING *
-                                      """, product.category_number, product.product_name,
-                                      getattr(product, 'manufacturer', 'Невідомо'), product.characteristics)
+    try:
+        new_product = await conn.fetchrow("""
+            INSERT INTO product (category_number, product_name, manufacturer, characteristics)
+            VALUES ($1, $2, $3, $4) RETURNING *
+        """, product.category_number, product.product_name,
+            getattr(product, 'manufacturer', 'Невідомо'), product.characteristics)
 
-    return dict(new_product)
+        return dict(new_product)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Товар з такою назвою у цій категорії вже існує"
+        )
 
 
 @router.put("/{id_product}", response_model=ProductResponse)
@@ -68,25 +77,44 @@ async def update_product(
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари")
 
-    cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1", product_data.category_number)
-    if not cat_check:
-        raise HTTPException(status_code=400, detail="Category not found")
+    if product_data.category_number is not None:
+        cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1", product_data.category_number)
+        if not cat_check:
+            raise HTTPException(status_code=400, detail="Категорія не знайдена")
 
-    updated_product = await conn.fetchrow("""
-                                          UPDATE product
-                                          SET category_number = $1,
-                                              product_name    = $2,
-                                              manufacturer    = $3,
-                                              characteristics = $4
-                                          WHERE id_product = $5 RETURNING *
-                                          """, product_data.category_number, product_data.product_name,
-                                          getattr(product_data, 'manufacturer', 'Невідомо'),
-                                          product_data.characteristics, id_product)
+    try:
+        update_fields = []
+        update_values = []
+        
+        if product_data.category_number is not None:
+            update_fields.append("category_number = $1")
+            update_values.append(product_data.category_number)
+        
+        if product_data.product_name is not None:
+            update_fields.append(f"product_name = ${len(update_values) + 1}")
+            update_values.append(product_data.product_name)
+        
+        if product_data.characteristics is not None:
+            update_fields.append(f"characteristics = ${len(update_values) + 1}")
+            update_values.append(product_data.characteristics)
+        
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="Не надано жодних полів для оновлення")
+        
+        update_values.append(id_product)
+        query = f"UPDATE product SET {', '.join(update_fields)} WHERE id_product = ${len(update_values)} RETURNING *"
+        
+        updated_product = await conn.fetchrow(query, *update_values)
 
-    if not updated_product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        if not updated_product:
+            raise HTTPException(status_code=404, detail="Товар не знайдено")
 
-    return dict(updated_product)
+        return dict(updated_product)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Товар з такою назвою у цій категорії вже існує"
+        )
 
 
 @router.delete("/{id_product}", status_code=status.HTTP_204_NO_CONTENT)
