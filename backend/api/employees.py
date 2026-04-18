@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import asyncpg
 from typing import List
-
+from fastapi import Query
+from typing import Optional
 from backend.core.database import get_db_conn
 from backend.schemas.employee import EmployeeCreate, EmployeeResponse, EmployeeUpdate
 from backend.api.dep import get_current_user
@@ -16,13 +17,22 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.get("/", response_model=List[EmployeeResponse])
 async def get_all_employees(
+        surname: Optional[str] = Query(None, description="Пошук за прізвищем"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може переглядати всіх працівників")
 
-    result = await conn.fetch("SELECT * FROM employee ORDER BY empl_surname")
+    query = "SELECT * FROM employee WHERE 1=1"
+    args = []
+
+    if surname:
+        args.append(f"%{surname}%")
+        query += f" AND empl_surname ILIKE ${len(args)}"
+
+    query += " ORDER BY empl_surname"
+    result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
 @router.post("/", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED)
