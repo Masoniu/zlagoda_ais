@@ -495,3 +495,15 @@ body.cashier-mode .cashier-hide-col {
   background-color: var(--primary-color) !important;
   color: white !important;
 }
+
+.btn_printer {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
+  transition: 0.2s ease-in-out;
+}
+
+.btn_printer:hover {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+}
