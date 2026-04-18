@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 import asyncpg
 from typing import List, Optional
-
+from decimal import Decimal
 from backend.core.database import get_db_conn
 from backend.schemas.store_product import StoreProductCreate, StoreProductResponse, StoreProductUpdate
 from backend.api.dep import get_current_user
@@ -38,28 +38,37 @@ async def get_all_store_products(
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
-@router.get("/{upc}")
-async def get_store_product_details(
-        upc: str,
+@router.get("/", response_model=List[StoreProductResponse])
+async def get_all_store_products(
+        promotional: Optional[bool] = Query(None, description="True - акційні, False - неакційні, None - всі"),
+        sort_by: Optional[str] = Query("name", description="Сортування: 'name' або 'quantity'"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
     query = """
-            SELECT sp.selling_price, \
+            SELECT sp.upc      AS "UPC",
+                   sp.upc_prom AS "UPC_prom",
+                   sp.id_product,
+                   sp.selling_price,
                    sp.products_number,
-                   p.product_name, \
-                   p.characteristics
+                   sp.promotional_product,
+                   p.product_name 
             FROM store_product sp
-                     JOIN product p ON sp.id_product = p.id_product
-            WHERE sp.upc = $1 \
+            JOIN product p ON sp.id_product = p.id_product
+            WHERE 1 = 1
             """
-    result = await conn.fetchrow(query, upc)
+    args = []
+    if promotional is not None:
+        args.append(promotional)
+        query += f" AND sp.promotional_product = ${len(args)}"
 
-    if not result:
-        raise HTTPException(status_code=404, detail="Товар не знайдено")
+    if sort_by == "quantity":
+        query += " ORDER BY sp.products_number ASC"
+    else:
+        query += " ORDER BY p.product_name ASC"
 
-    return dict(result)
-
+    result = await conn.fetch(query, *args)
+    return [dict(r) for r in result]
 
 @router.post("/", response_model=StoreProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_store_product(
