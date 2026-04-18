@@ -8,7 +8,6 @@ class SaleItemCreate(BaseModel):
     product_number: int = Field(..., gt=0)
 
 class CheckCreate(BaseModel):
-    check_number: str = Field(..., max_length=10)
     card_number: Optional[str] = Field(None, max_length=13)
     items: List[SaleItemCreate]
 

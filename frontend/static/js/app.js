@@ -795,6 +795,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 calculatePosTotals();
             });
         }
+        // --- ЛОГІКА ОПЛАТИ (СТВОРЕННЯ ЧЕКУ) ---
+        const posPayBtn = document.getElementById('posPayBtn');
+        if (posPayBtn) {
+            posPayBtn.addEventListener('click', async () => {
+                if (currentReceipt.length === 0) return;
+
+                posPayBtn.disabled = true;
+                posPayBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обробка...';
+
+                const payload = {
+                    card_number: appliedCustomer ? appliedCustomer.card_number : null,
+                    items: currentReceipt.map(item => ({
+                        UPC: item.upc,
+                        product_number: item.quantity
+                    }))
+                };
+
+                const res = await apiMutate('/checks/', 'POST', payload);
+
+                posPayBtn.disabled = false;
+                posPayBtn.innerHTML = '<i class="bi bi-cash-coin me-2"></i> ОПЛАТИТИ';
+
+                if (res.success) {
+                    showBeautifulAlert('Чек успішно збережено!', 'success');
+                    currentReceipt = [];
+                    appliedCustomer = null;
+                    document.getElementById('posCardInput').value = '';
+                    document.getElementById('posCardResult').textContent = '';
+                    renderPosTable();
+                    calculatePosTotals();
+                    await loadStoreProducts();
+                }
+            });
+        }
     }
 
     // Вибір ролі працівника

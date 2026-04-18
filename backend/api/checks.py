@@ -25,14 +25,12 @@ async def create_check(
 
     try:
         async with conn.transaction():
-            chk_exist = await conn.fetchval('SELECT 1 FROM "check" WHERE check_number = $1', check_data.check_number)
-            if chk_exist:
-                raise HTTPException(status_code=400, detail="Чек з таким номером вже існує")
+            next_id = await conn.fetchval('SELECT COALESCE(MAX(CAST(check_number AS BIGINT)), 0) + 1 FROM "check"')
+            new_check_number = str(next_id)
 
             discount_percent = Decimal(0)
             if check_data.card_number:
-                card_percent = await conn.fetchval('SELECT percent FROM customer_card WHERE card_number = $1',
-                                                   check_data.card_number)
+                card_percent = await conn.fetchval('SELECT percent FROM customer_card WHERE card_number = $1', check_data.card_number)
                 if card_percent is None:
                     raise HTTPException(status_code=404, detail="Картку клієнта не знайдено")
                 discount_percent = Decimal(card_percent) / Decimal(100)
@@ -41,8 +39,7 @@ async def create_check(
             sales_to_insert = []
 
             for item in check_data.items:
-                store_product = await conn.fetchrow(
-                    'SELECT selling_price, products_number FROM store_product WHERE "UPC" = $1', item.UPC)
+                store_product = await conn.fetchrow('SELECT selling_price, products_number FROM store_product WHERE upc = $1', item.UPC)
                 if not store_product:
                     raise HTTPException(status_code=404, detail=f"Товар з UPC {item.UPC} не знайдено")
 
@@ -52,26 +49,27 @@ async def create_check(
                 line_price = Decimal(store_product["selling_price"])
                 sum_total += line_price * Decimal(item.product_number)
 
-                sales_to_insert.append((item.UPC, check_data.check_number, item.product_number, line_price))
+                sales_to_insert.append((item.UPC, new_check_number, item.product_number, line_price))
 
             if discount_percent > 0:
                 sum_total = sum_total * (Decimal(1) - discount_percent)
 
             vat = sum_total * Decimal('0.20')
-            print_date = datetime.now(timezone.utc)
-
+            print_date = datetime.now()
             new_check = await conn.fetchrow('''
-                                            INSERT INTO "check" (check_number, id_employee, card_number, print_date, sum_total, vat)
-                                            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-                                            ''', check_data.check_number, current_user["id_employee"],
-                                            check_data.card_number, print_date, sum_total, vat)
+                INSERT INTO "check" (check_number, id_employee, card_number, print_date, sum_total, vat)
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+            ''', new_check_number, current_user["id_employee"], check_data.card_number, print_date, sum_total, vat)
 
             await conn.executemany('''
-                                   INSERT INTO sale (upc, check_number, product_number, selling_price)
-                                   VALUES ($1, $2, $3, $4)
-                                   ''', sales_to_insert)
+                INSERT INTO sale (upc, check_number, product_number, selling_price)
+                VALUES ($1, $2, $3, $4)
+            ''', sales_to_insert)
 
-            return dict(new_check)
+            check_dict = dict(new_check)
+            check_dict["cashier_name"] = f"{current_user['empl_surname']} {current_user['empl_name'][0]}."
+
+            return check_dict
 
     except HTTPException:
         raise
