@@ -15,21 +15,21 @@ router = APIRouter()
 async def get_all_cards(
         percent: Optional[int] = Query(None, description="Фільтр за відсотком знижки"),
         surname: Optional[str] = Query(None, description="Пошук за прізвищем"),
+        sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
     query = "SELECT * FROM customer_card WHERE 1=1"
     args = []
-
     if percent is not None:
         args.append(percent)
         query += f" AND percent = ${len(args)}"
-
     if surname:
         args.append(f"%{surname}%")
         query += f" AND cust_surname ILIKE ${len(args)}"
 
-    query += " ORDER BY cust_surname"
+    order = "DESC" if sort_order.lower() == "desc" else "ASC"
+    query += f" ORDER BY cust_surname {order}"
 
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
