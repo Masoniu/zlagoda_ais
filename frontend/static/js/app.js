@@ -60,7 +60,10 @@ async function apiFetch(endpoint) {
         });
         if (response.status === 401) {
             sessionStorage.clear();
-            window.location.href = '../shared/login.html';
+            showBeautifulAlert('Сеанс закінчився. Будь ласка, увійдіть знову', 'warning');
+            setTimeout(() => {
+                window.location.href = '../shared/login.html';
+            }, 1500);
             return [];
         }
         return await response.json();
@@ -87,13 +90,22 @@ async function apiMutate(endpoint, method, data = null) {
 
         if (response.status === 401) {
             sessionStorage.clear();
-            window.location.href = '../shared/login.html';
+            showBeautifulAlert('Сеанс закінчився. Будь ласка, увійдіть знову', 'warning');
+            setTimeout(() => {
+                window.location.href = '../shared/login.html';
+            }, 1500);
             return { success: false };
         }
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Помилка сервера');
+            let errorMessage = 'Помилка сервера';
+            try {
+                const err = await response.json();
+                errorMessage = err.detail || err.message || errorMessage;
+            } catch (e) {
+                errorMessage = `Помилка сервера (${response.status})`;
+            }
+            throw new Error(errorMessage);
         }
 
         if (method === 'DELETE' || response.status === 204) {
@@ -146,8 +158,12 @@ window.loadStoreProducts = async (query = '') => {
 
     const dbStoreProducts = await apiFetch(url);
     mockStoreProducts = dbStoreProducts.map(sp => ({
-        upc: sp.upc || sp.UPC, id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
-        products_number: sp.products_number, promotional_product: sp.promotional_product, product_name: sp.product_name
+        upc: sp.UPC,  // Use uppercase UPC from response
+        id_product: sp.id_product,
+        selling_price: parseFloat(sp.selling_price),
+        products_number: sp.products_number,
+        promotional_product: sp.promotional_product,
+        product_name: sp.product_name
     }));
 
     if (document.getElementById('storeProductTableBody')) {
@@ -802,8 +818,16 @@ function setupCategoryForm() {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('editCategoryId').value;
+        const categoryName = document.getElementById('categoryNameInput').value.trim();
         const submitBtn = form.querySelector('button[type="submit"]');
-        const data = { category_name: document.getElementById('categoryNameInput').value.trim() };
+
+        // Validation
+        if (!categoryName) {
+            showBeautifulAlert('Будь ласка, введіть назву категорії', 'warning');
+            return;
+        }
+
+        const data = { category_name: categoryName };
 
         submitBtn.disabled = true;
         const res = editId
@@ -827,11 +851,29 @@ function setupProductForm() {
         const editId = document.getElementById('editProductId').value;
         const submitBtn = form.querySelector('button[type="submit"]');
 
+        // Validation
+        const productName = document.getElementById('productNameInput').value.trim();
+        const characteristics = document.getElementById('productCharsInput').value.trim();
+        const categoryId = document.getElementById('categorySelectInput').value;
+
+        if (!productName) {
+            showBeautifulAlert('Будь ласка, введіть назву товару', 'warning');
+            return;
+        }
+        if (!characteristics) {
+            showBeautifulAlert('Будь ласка, введіть характеристики товару', 'warning');
+            return;
+        }
+        if (!categoryId) {
+            showBeautifulAlert('Будь ласка, виберіть категорію', 'warning');
+            return;
+        }
+
         const data = {
-            product_name: document.getElementById('productNameInput').value.trim(),
+            product_name: productName,
             manufacturer: document.getElementById('productManufacturerInput').value.trim(),
-            characteristics: document.getElementById('productCharsInput').value.trim(),
-            category_number: parseInt(document.getElementById('categorySelectInput').value)
+            characteristics: characteristics,
+            category_number: parseInt(categoryId)
         };
 
         submitBtn.disabled = true;
@@ -846,6 +888,25 @@ function setupProductForm() {
             showBeautifulAlert('Успішно збережено!', 'success');
         }
     });
+}
+
+function resetStoreProductForm() {
+    const form = document.getElementById('addStoreProductForm');
+    if (form) form.reset();
+    document.getElementById('isEditMode').value = "false";
+    document.getElementById('spUpcInput').disabled = false;
+
+    const promoSwitch = document.getElementById('spPromoInput');
+    const priceInput = document.getElementById('spPriceInput');
+    const promoText = document.getElementById('promoStatusText');
+
+    if (promoSwitch) promoSwitch.checked = false;
+    if (priceInput) {
+        priceInput.disabled = false;
+        priceInput.placeholder = "";
+        priceInput.value = "";
+    }
+    if (promoText) promoText.textContent = "Ні";
 }
 
 function setupStoreProductForm() {
@@ -875,14 +936,40 @@ function setupStoreProductForm() {
         const isEditMode = document.getElementById('isEditMode').value === "true";
         const submitBtn = form.querySelector('button[type="submit"]');
 
+        // Validation
+        if (!upcInput) {
+            showBeautifulAlert('Будь ласка, введіть UPC', 'warning');
+            return;
+        }
+        if (!document.getElementById('spProductSelect').value) {
+            showBeautifulAlert('Будь ласка, виберіть товар', 'warning');
+            return;
+        }
+        if (!document.getElementById('spQuantityInput').value) {
+            showBeautifulAlert('Будь ласка, введіть кількість', 'warning');
+            return;
+        }
+
         const data = {
             UPC: upcInput,
-            upc_prom: null,
             id_product: parseInt(document.getElementById('spProductSelect').value),
             selling_price: parseFloat(document.getElementById('spPriceInput').value) || 0,
             products_number: parseInt(document.getElementById('spQuantityInput').value),
             promotional_product: document.getElementById('spPromoInput').checked
         };
+
+        // Add upc_prom if promotional product
+        if (data.promotional_product) {
+            const upcPromInput = document.getElementById('spUpcPromInput');
+            if (upcPromInput && upcPromInput.value.trim()) {
+                data.upc_prom = upcPromInput.value.trim();
+            } else {
+                showBeautifulAlert('Для акційного товару потрібно вказати базовий UPC', 'warning');
+                return;
+            }
+        } else {
+            data.upc_prom = null;
+        }
 
         submitBtn.disabled = true;
         const res = isEditMode
@@ -910,30 +997,56 @@ function setupEmployeeForm() {
         const editId = document.getElementById('editEmployeeId').value;
         const submitBtn = form.querySelector('button[type="submit"]');
 
+        // Validation
+        if (!editId && !document.getElementById('emplIdInput').value.trim()) {
+            showBeautifulAlert('Будь ласка, введіть ID працівника', 'warning');
+            return;
+        }
+        if (!document.getElementById('emplSurnameInput').value.trim()) {
+            showBeautifulAlert('Будь ласка, введіть прізвище', 'warning');
+            return;
+        }
+        if (!document.getElementById('emplNameInput').value.trim()) {
+            showBeautifulAlert('Будь ласка, введіть ім\'я', 'warning');
+            return;
+        }
+        if (!editId && !document.getElementById('emplPasswordInput').value) {
+            showBeautifulAlert('Будь ласка, введіть пароль', 'warning');
+            return;
+        }
+
         const data = {
-            id_employee: document.getElementById('emplPasswordInput').value ? document.getElementById('editEmployeeId').value : undefined, // для POST
-            password: document.getElementById('emplPasswordInput').value,
-            empl_surname: document.getElementById('emplSurnameInput').value,
-            empl_name: document.getElementById('emplNameInput').value,
-            empl_patronymic: document.getElementById('emplPatronymicInput').value,
+            empl_surname: document.getElementById('emplSurnameInput').value.trim(),
+            empl_name: document.getElementById('emplNameInput').value.trim(),
+            empl_patronymic: document.getElementById('emplPatronymicInput').value.trim(),
             empl_role: document.getElementById('emplRoleInput').value,
             salary: parseFloat(document.getElementById('emplSalaryInput').value),
             date_of_start: document.getElementById('emplStartInput').value,
             date_of_birth: document.getElementById('emplBirthInput').value,
-            phone_number: document.getElementById('emplPhoneInput').value,
-            city: document.getElementById('emplCityInput').value,
-            street: document.getElementById('emplStreetInput').value,
-            zip_code: document.getElementById('emplZipInput').value
+            phone_number: document.getElementById('emplPhoneInput').value.trim(),
+            city: document.getElementById('emplCityInput').value.trim(),
+            street: document.getElementById('emplStreetInput').value.trim(),
+            zip_code: document.getElementById('emplZipInput').value.trim()
         };
 
         submitBtn.disabled = true;
         let res;
         if (editId) {
-            delete data.password;
-            delete data.id_employee;
+            // PUT - Update existing employee (no password or ID changes)
             res = await apiMutate(`/employees/${editId}`, 'PUT', data);
         } else {
-            data.id_employee = editId || `E${Math.floor(Math.random() * 1000)}`;
+            // POST - Create new employee
+            const newId = document.getElementById('emplIdInput').value.trim();
+            const password = document.getElementById('emplPasswordInput').value;
+
+            if (!newId || !password) {
+                showBeautifulAlert('Будь ласка, заповніть всі обов\'язкові поля', 'warning');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            data.id_employee = newId;
+            data.password = password;
             res = await apiMutate('/employees/', 'POST', data);
         }
         submitBtn.disabled = false;
@@ -954,13 +1067,41 @@ function setupCustomerForm() {
         const editId = document.getElementById('editCustomerCardNumber').value;
         const submitBtn = form.querySelector('button[type="submit"]');
 
+        // Validation
+        const cardNumber = editId || document.getElementById('custCardNumberInput').value.trim();
+        const surname = document.getElementById('custSurnameInput').value.trim();
+        const name = document.getElementById('custNameInput').value.trim();
+        const phone = document.getElementById('custPhoneInput').value.trim();
+        const percent = document.getElementById('custPercentInput').value;
+
+        if (!cardNumber) {
+            showBeautifulAlert('Будь ласка, введіть номер картки', 'warning');
+            return;
+        }
+        if (!surname) {
+            showBeautifulAlert('Будь ласка, введіть прізвище', 'warning');
+            return;
+        }
+        if (!name) {
+            showBeautifulAlert('Будь ласка, введіть ім\'я', 'warning');
+            return;
+        }
+        if (!phone) {
+            showBeautifulAlert('Будь ласка, введіть номер телефону', 'warning');
+            return;
+        }
+        if (isNaN(percent) || percent < 0 || percent > 100) {
+            showBeautifulAlert('Відсоток знижки повинен бути від 0 до 100', 'warning');
+            return;
+        }
+
         const data = {
-            card_number: editId || `C${Math.floor(Math.random() * 10000)}`, // Генерація ID для POST
-            cust_surname: document.getElementById('custSurnameInput').value.trim(),
-            cust_name: document.getElementById('custNameInput').value.trim(),
+            card_number: cardNumber,
+            cust_surname: surname,
+            cust_name: name,
             cust_patronymic: document.getElementById('custPatronymicInput').value.trim(),
-            phone_number: document.getElementById('custPhoneInput').value.trim(),
-            percent: parseInt(document.getElementById('custPercentInput').value),
+            phone_number: phone,
+            percent: parseInt(percent),
             city: document.getElementById('custCityInput').value.trim(),
             street: document.getElementById('custStreetInput').value.trim(),
             zip_code: document.getElementById('custZipInput').value.trim()
