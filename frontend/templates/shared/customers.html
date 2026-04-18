@@ -36,18 +36,15 @@
           />
         </div>
         <div class="d-flex align-items-center gap-3">
-          <button
-            class="btn-filter-ghost"
-            onclick="openFilterModal('customers')"
-            title="Фільтри"
-          >
+          <button class="btn btn-outline-secondary fw-bold px-3 py-2 shadow-sm rounded-3 bg-white"
+                  onclick="generateReport('Карти лояльності клієнтів', 'customerTableBody')">
+            <i class="bi bi-printer me-2"></i>Друк звіту
+          </button>
+
+          <button class="btn-filter-ghost" onclick="openFilterModal('customers')" title="Фільтри">
             <i class="bi bi-funnel fs-4"></i>
           </button>
-          <button
-            class="btn btn-primary btn-add-new fw-bold px-4 py-2 shadow-sm rounded-3"
-            data-bs-toggle="modal"
-            data-bs-target="#addCustomerModal"
-          >
+          <button class="btn btn-primary btn-add-new fw-bold px-4 py-2 shadow-sm rounded-3" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
             + Додати клієнта
           </button>
         </div>
