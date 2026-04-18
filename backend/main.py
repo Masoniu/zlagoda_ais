@@ -10,7 +10,7 @@ from backend.api.customer_cards import router as customer_cards_router
 from backend.api.checks import router as checks_router
 from backend.api.employees import router as employees_router
 from backend.core.database import create_db_pool
-
+# uvicorn backend.main:app --reload
 
 async def cleanup_old_checks(pool):
     while True:
