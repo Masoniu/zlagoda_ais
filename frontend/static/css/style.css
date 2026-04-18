@@ -23,7 +23,7 @@ h2 {
 }
 
 .brand-logo {
-  color: var(--text-dark);
+  color: var(--text-color);
   text-decoration: none;
 }
 
@@ -39,7 +39,7 @@ h2 {
 
 .auth-card h2,
 .form-label {
-  color: var(--text-dark) !important;
+  color: var(--text-color) !important;
 }
 
 .btn-primary {
@@ -57,7 +57,7 @@ h2 {
 .search_input {
   background-color: #f8f9fa !important;
   border: 1px solid #d4cdc7 !important;
-  color: var(--text-dark) !important;
+  color: var(--text-color) !important;
 }
 
 .auth-input:focus,
@@ -322,39 +322,35 @@ body.loaded {
 }
 
 @media print {
-  #navbar-placeholder,
-  .search-container,
-  .btn,
-  .modal,
-  td:last-child,
-  th:last-child,
-  .bi-arrow-down-up,
-  .btn-filter-ghost {
-    display: none !important;
-  }
-
-  body {
-    background-color: white !important;
-  }
-
-  .card {
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  .table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    border-bottom: 1px solid #000 !important;
-  }
-
-  .table th,
-  .table td {
-    border: 1px solid #000 !important;
-    padding: 4px 6px !important;
-    font-size: 12px !important;
-    color: black !important;
-  }
+    body * {
+        visibility: hidden;
+    }
+    #reportPreviewModal * {
+        visibility: visible;
+    }
+    #reportPreviewModal .modal-dialog {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    #reportPreviewModal .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    #reportPreviewModal .modal-header,
+    #reportPreviewModal .modal-footer {
+        display: none !important;
+    }
+    #reportPrintBody {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    @page {
+        margin: 1cm;
+        size: auto;
+    }
 }
 
 body.cashier-mode .btn_edit,

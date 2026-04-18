@@ -143,3 +143,25 @@
     </div>
   </div>
 </div>
+
+<!--print-->
+<div class="modal fade" id="reportPreviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-0 bg-light rounded-top-4">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-file-earmark-text me-2 icon-zlagoda"></i>Попередній перегляд звіту: <span id="reportPreviewTitle"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4" id="reportPrintBody">
+        </div>
+      <div class="modal-footer border-0 bg-light rounded-bottom-4">
+        <button type="button" class="btn btn-secondary fw-bold px-4" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-primary fw-bold px-5" onclick="executePrint()">
+          <i class="bi bi-printer me-2"></i>Підтвердити друк
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

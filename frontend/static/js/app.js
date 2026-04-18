@@ -1058,6 +1058,53 @@ function viewCustomerDetails(cardNumber) {
 // ==========================================
 // 10. ІНШІ УТИЛІТИ (POS, ОЧИЩЕННЯ)
 // ==========================================
+window.generateReport = (pageTitle, tableBodyId) => {
+    const tbody = document.getElementById(tableBodyId);
+    if (!tbody) return;
+    const sourceTable = tbody.closest('table');
+    const tableClone = sourceTable.cloneNode(true);
+    const rows = tableClone.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.children;
+        if (cells.length > 0) {
+            const lastCell = cells[cells.length - 1];
+            if (lastCell.textContent.includes('Дії') || lastCell.innerHTML.includes('btn') || lastCell.classList.contains('cashier-hide-col')) {
+                lastCell.remove();
+            }
+        }
+    });
+    document.getElementById('reportPreviewTitle').textContent = pageTitle;
+    const printBody = document.getElementById('reportPrintBody');
+    printBody.innerHTML = '';
+    
+    // ВЕРХНІЙ КОЛОНТИТУЛ
+    const printHeader = document.createElement('div');
+    printHeader.className = 'd-none d-print-block text-center mb-4';
+    printHeader.innerHTML = `
+        <h2 style="font-weight: 800; color: #333;">Міні-супермаркет «ZLAGODA»</h2>
+        <h4 style="color: #666;">Офіційний звіт: ${pageTitle}</h4>
+        <hr style="border-top: 2px solid #000; margin-bottom: 20px;">
+    `;
+    printBody.appendChild(printHeader);
+    tableClone.className = 'table table-bordered table-striped w-100';
+    printBody.appendChild(tableClone);
+
+    // НИЖНІЙ КОЛОНТИТУЛ
+    const printFooter = document.createElement('div');
+    printFooter.className = 'd-none d-print-block text-center mt-5';
+    const now = new Date().toLocaleString('uk-UA');
+    printFooter.innerHTML = `
+        <hr style="border-top: 2px solid #000; margin-top: 20px;">
+        <p style="font-style: italic; color: #555;">Згенеровано автоматизованою інформаційною системою ZLAGODA. Дата формування: ${now}</p>
+    `;
+    printBody.appendChild(printFooter);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('reportPreviewModal')).show();
+};
+
+window.executePrint = () => {
+    window.print();
+};
+
 function togglePasswordVisibility() {
     const passInput = document.getElementById('emplPasswordInput');
     const icon = document.querySelector('.password-toggle-icon');
