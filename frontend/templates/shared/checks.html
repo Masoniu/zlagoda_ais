@@ -36,19 +36,26 @@
           />
         </div>
         <div class="d-flex align-items-center gap-3">
-          <button class="btn btn-outline-secondary fw-bold px-3 py-2 shadow-sm rounded-3 bg-white"
-                  onclick="generateReport('Історія продажів за період', 'checkTableBody')">
-            <i class="bi bi-printer me-2"></i>Друк звіту
-          </button>
-
-          <button class="btn-filter-ghost" onclick="openFilterModal('checks')" title="Фільтри">
+          <button
+            class="btn-filter-ghost"
+            onclick="openFilterModal('checks')"
+            title="Фільтри"
+          >
             <i class="bi bi-funnel fs-4"></i>
           </button>
 
           <div class="bg-white px-4 py-2 rounded-3 shadow-sm border">
             <span class="text-muted me-2">Загальна сума всіх чеків:</span>
-            <span class="fw-bold icon_zlagoda"><span id="totalChecksSum">0.00</span> грн</span>
+            <span class="fw-bold icon_zlagoda"
+              ><span id="totalChecksSum">0.00</span> грн</span
+            >
           </div>
+          <button
+            class="btn btn-outline-secondary btn_printer fw-bold px-4 py-2 shadow-sm rounded-3 bg-white"
+            onclick="generateReport('Персонал магазину', 'employeeTableBody')"
+          >
+            <i class="bi bi-printer me-2"></i>Друк звіту
+          </button>
         </div>
       </div>
 
