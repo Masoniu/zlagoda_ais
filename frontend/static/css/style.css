@@ -322,34 +322,60 @@ body.loaded {
 }
 
 @media print {
-    body * {
-        visibility: hidden;
+    #navbar_placeholder,
+    main,
+    .welcome_wrapper,
+    .modal-backdrop {
+        display: none !important;
     }
-    #reportPreviewModal * {
-        visibility: visible;
+
+    body, html {
+        height: auto !important;
+        overflow: visible !important;
+        background-color: white !important;
     }
+
+    #reportPreviewModal {
+        display: block !important;
+        position: static !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+    }
+
     #reportPreviewModal .modal-dialog {
-        max-width: 100%;
-        margin: 0;
-        padding: 0;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        transform: none !important;
     }
+
     #reportPreviewModal .modal-content {
         border: none !important;
         box-shadow: none !important;
+        background-color: white !important;
     }
+
     #reportPreviewModal .modal-header,
     #reportPreviewModal .modal-footer {
         display: none !important;
     }
+
     #reportPrintBody {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+        padding: 0 !important;
     }
+
+    table {
+        page-break-inside: auto;
+        width: 100% !important;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
     @page {
-        margin: 1cm;
-        size: auto;
+        margin: 1.5cm;
+        size: A4;
     }
 }
 
