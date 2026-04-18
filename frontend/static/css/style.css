@@ -546,3 +546,8 @@ body.cashier-mode .cashier-hide-col {
 .navbar .btn-outline-light i {
   transition: all 0.2s ease-in-out !important;
 }
+
+.nav-item:hover .nav-link {
+  text-decoration: none !important;
+  color: var(--text-color) !important;
+}
