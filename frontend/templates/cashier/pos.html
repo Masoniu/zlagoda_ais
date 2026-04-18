@@ -32,14 +32,16 @@
                     ><i class="bi bi-upc-scan icon-zlagoda"></i
                   ></span>
                   <input
-                    type="text"
-                    id="posUpcInput"
-                    class="form-control border-0 shadow-none fw-bold"
-                    placeholder="Відскануйте або введіть UPC товару"
-                    autofocus
-                    autocomplete="off"
-                    required
+                          type="text"
+                          id="posUpcInput"
+                          list="posUpcList"
+                          class="form-control border-0 shadow-none fw-bold"
+                          placeholder="Почніть вводити назву товару або UPC..."
+                          autofocus
+                          autocomplete="off"
+                          required
                   />
+                  <datalist id="posUpcList"></datalist>
                 </div>
                 <button
                   type="submit"
@@ -89,11 +91,14 @@
                 >
                 <div class="input-group">
                   <input
-                    type="text"
-                    id="posCardInput"
-                    class="form-control auth-input"
-                    placeholder="Номер картки"
+                          type="text"
+                          id="posCardInput"
+                          list="posCardList"
+                          class="form-control auth-input"
+                          placeholder="Прізвище, телефон або номер..."
+                          autocomplete="off"
                   />
+                  <datalist id="posCardList"></datalist>
                   <button type="submit" class="btn btn-outline-secondary">
                     Застосувати
                   </button>

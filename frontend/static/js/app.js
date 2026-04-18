@@ -94,60 +94,68 @@ async function apiMutate(endpoint, method, data = null) {
 }
 
 async function loadRealDataFromDB() {
+    // Перевіряємо, чи ми зараз на сторінці каси (POS)
+    const isPosPage = document.getElementById('posScanForm') !== null;
+
     // 1. Категорії
-    if (document.getElementById('categoryTableBody')) {
+    if (document.getElementById('categoryTableBody') || document.getElementById('productTableBody')) {
         mockCategories = await apiFetch('/categories/');
-        renderCategories(mockCategories);
-        setupSearch('categorySearch', mockCategories, renderCategories, 'category_name');
+        if (document.getElementById('categoryTableBody')) {
+            renderCategories(mockCategories);
+            setupSearch('categorySearch', mockCategories, renderCategories, 'category_name');
+        }
     }
     // 2. Товари (каталог)
-    if (document.getElementById('productTableBody')) {
+    if (document.getElementById('productTableBody') || document.getElementById('storeProductTableBody') || isPosPage) {
         const dbProducts = await apiFetch('/products/');
         mockProducts = dbProducts.map(p => ({
             id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
             chars: p.characteristics, category_id: p.category_number
         }));
-        mockCategories = await apiFetch('/categories/');
-
-        renderProducts(mockProducts);
-        populateCategoryDropdown();
-        setupSearch('productSearch', mockProducts, renderProducts, 'name');
+        if (document.getElementById('productTableBody')) {
+            renderProducts(mockProducts);
+            populateCategoryDropdown();
+            setupSearch('productSearch', mockProducts, renderProducts, 'name');
+        }
     }
-    // 3. Працівники
-    if (document.getElementById('employeeTableBody')) {
-        const dbEmployees = await apiFetch('/employees/');
-        mockEmployees = dbEmployees.map(e => ({
-            id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
-            role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
-            phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
-        }));
-        renderEmployees(mockEmployees);
-        setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
-    }
-    // 4. Клієнти
-    if (document.getElementById('customerTableBody')) {
-        const dbCustomers = await apiFetch('/customer-cards/');
-        mockCustomers = dbCustomers.map(c => ({
-            card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
-            phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
-        }));
-        renderCustomers(mockCustomers);
-        setupSearch('customerSearch', mockCustomers, renderCustomers, 'surname');
-    }
-    // 5. Товари в магазині (партії)
-    if (document.getElementById('storeProductTableBody')) {
+    // 3. Товари в магазині (партії)
+    if (document.getElementById('storeProductTableBody') || isPosPage) {
         const dbStoreProducts = await apiFetch('/store-products/');
         mockStoreProducts = dbStoreProducts.map(sp => ({
             upc: sp.upc || sp.UPC,
             id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
             products_number: sp.products_number, promotional_product: sp.promotional_product
         }));
-        const dbProducts = await apiFetch('/products/');
-        mockProducts = dbProducts.map(p => ({ id: p.id_product, name: p.product_name, manufacturer: p.manufacturer }));
-
-        renderStoreProducts(mockStoreProducts);
-        populateProductDropdown();
-        setupSearch('storeProductSearch', mockStoreProducts, renderStoreProducts, 'upc');
+        if (document.getElementById('storeProductTableBody')) {
+            renderStoreProducts(mockStoreProducts);
+            populateProductDropdown();
+            setupSearch('storeProductSearch', mockStoreProducts, renderStoreProducts, 'upc');
+        }
+    }
+    // 4. Клієнти
+    if (document.getElementById('customerTableBody') || isPosPage) {
+        const dbCustomers = await apiFetch('/customer-cards/');
+        mockCustomers = dbCustomers.map(c => ({
+            card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
+            phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
+        }));
+        if (document.getElementById('customerTableBody')) {
+            renderCustomers(mockCustomers);
+            setupSearch('customerSearch', mockCustomers, renderCustomers, 'surname');
+        }
+    }
+    // 5. Працівники
+    if (document.getElementById('employeeTableBody') || document.getElementById('checkTableBody')) {
+        const dbEmployees = await apiFetch('/employees/');
+        mockEmployees = dbEmployees.map(e => ({
+            id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
+            role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
+            phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
+        }));
+        if (document.getElementById('employeeTableBody')) {
+            renderEmployees(mockEmployees);
+            setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
+        }
     }
     // 6. Чеки
     if (document.getElementById('checkTableBody')) {
@@ -156,12 +164,11 @@ async function loadRealDataFromDB() {
             check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
             print_date: new Date(c.print_date).toLocaleString('uk-UA'), sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat)
         }));
-        const dbEmployees = await apiFetch('/employees/');
-        mockEmployees = dbEmployees.map(e => ({ id: e.id_employee, surname: e.empl_surname, name: e.empl_name }));
-
         renderChecks(mockChecks);
         setupSearch('checkSearch', mockChecks, renderChecks, 'check_number');
     }
+
+    populatePosDatalists();
 }
 
 // ==========================================
@@ -331,6 +338,25 @@ function renderPosTable() {
 // ==========================================
 // 4. ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ РЕНДЕРУ
 // ==========================================
+function populatePosDatalists() {
+    const upcList = document.getElementById('posUpcList');
+    if (upcList) {
+        upcList.innerHTML = '';
+        mockStoreProducts.forEach(sp => {
+            const prod = mockProducts.find(p => p.id === sp.id_product);
+            const name = prod ? prod.name : 'Невідомий товар';
+            upcList.innerHTML += `<option value="${sp.upc}">${name} (Ціна: ${sp.selling_price} грн, Залишок: ${sp.products_number} шт)</option>`;
+        });
+    }
+    const cardList = document.getElementById('posCardList');
+    if (cardList) {
+        cardList.innerHTML = '';
+        mockCustomers.forEach(c => {
+            cardList.innerHTML += `<option value="${c.card_number}">${c.surname} ${c.name[0]}. (Знижка: ${c.percent}%, Тел: ${c.phone})</option>`;
+        });
+    }
+}
+
 function populateCategoryDropdown() {
     const select = document.getElementById('categorySelectInput');
     if (!select) return;
@@ -590,11 +616,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (posForm) {
         posForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const upc = posInput.value.trim();
-            const storeProduct = mockStoreProducts.find(sp => sp.upc === upc);
+            const inputValue = posInput.value.trim().toLowerCase();
+            //пошук за точним UPC АБО назвою товару
+            const storeProduct = mockStoreProducts.find(sp => {
+                if (sp.upc.toLowerCase() === inputValue) return true;
+                const prod = mockProducts.find(p => p.id === sp.id_product);
+                return prod && prod.name.toLowerCase().includes(inputValue);
+            });
 
             if (storeProduct) {
-                const existingItem = currentReceipt.find(item => item.upc === upc);
+                const existingItem = currentReceipt.find(item => item.upc === storeProduct.upc);
                 if (existingItem) {
                     existingItem.quantity += 1;
                 } else {
@@ -610,7 +641,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 calculatePosTotals();
                 posInput.value = '';
             } else {
-                showBeautifulAlert("Товар з таким UPC не знайдено на полицях!", 'danger');
+                showBeautifulAlert("Товар не знайдено на полицях!", 'danger');
             }
         });
 
@@ -621,14 +652,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (posCardForm) {
             posCardForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const cardNumber = posCardInput.value.trim();
-                if (!cardNumber) {
+                const inputValue = posCardInput.value.trim().toLowerCase();
+                if (!inputValue) {
                     appliedCustomer = null;
                     posCardResult.textContent = '';
                     calculatePosTotals();
                     return;
                 }
-                const customer = mockCustomers.find(c => c.card_number === cardNumber);
+                //пошук за номером картки, прізвищем, телефоном
+                const customer = mockCustomers.find(c =>
+                    c.card_number.toLowerCase() === inputValue ||
+                    c.surname.toLowerCase().includes(inputValue) ||
+                    c.phone.includes(inputValue)
+                );
                 if (customer) {
                     appliedCustomer = customer;
                     posCardResult.textContent = `Застосовано: ${customer.surname} ${customer.name[0]}. (-${customer.percent}%)`;
