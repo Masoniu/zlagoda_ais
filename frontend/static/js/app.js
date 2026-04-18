@@ -1018,31 +1018,41 @@ function viewCheckDetails(checkNumber) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('viewCheckModal')).show();
 }
 
-function viewEmployeeDetails(id) {
-    const empl = mockEmployees.find(e => e.id === id);
-    if (!empl) return;
-
+window.viewEmployeeDetails = async (id) => {
+    let empl = mockEmployees.find(e => e.id === id);
+    if (!empl) {
+        const me = await apiFetch('/employees/me');
+        if (me) {
+            empl = {
+                id: me.id_employee, surname: me.empl_surname, name: me.empl_name, patronymic: me.empl_patronymic,
+                role: me.empl_role, salary: me.salary, start_date: me.date_of_start, birth_date: me.date_of_birth,
+                phone: me.phone_number, city: me.city, street: me.street, zip: me.zip_code
+            };
+        }
+    }
+    if (!empl) {
+        showBeautifulAlert("Не вдалося завантажити дані профілю", "danger");
+        return;
+    }
     const header = document.getElementById('v-header');
     if (header) {
         header.className = `modal-header border-0 ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}`;
-        const closeBtn = header.querySelector('.btn-close');
-        if (closeBtn) closeBtn.className = 'btn-close btn-close-white';
     }
-
     document.getElementById('v-id').textContent = `Табельний номер: #${empl.id}`;
     document.getElementById('v-fullName').textContent = `${empl.surname} ${empl.name} ${empl.patronymic || ''}`;
     document.getElementById('v-phone').textContent = empl.phone;
     document.getElementById('v-salary').textContent = `${empl.salary} грн`;
     document.getElementById('v-birth').textContent = empl.birth_date;
     document.getElementById('v-start').textContent = empl.start_date;
-    document.getElementById('v-address').textContent = `${empl.zip}, м. ${empl.city}, ${empl.street}`;
+    document.getElementById('v-address').textContent = `${empl.zip || ''}, м. ${empl.city || ''}, ${empl.street || ''}`;
 
     const roleBadge = document.getElementById('v-role');
-    roleBadge.textContent = empl.role;
-    roleBadge.className = `badge-empl ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}`;
-
+    if (roleBadge) {
+        roleBadge.textContent = empl.role;
+        roleBadge.className = `badge-empl ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}`;
+    }
     bootstrap.Modal.getOrCreateInstance(document.getElementById('viewEmployeeModal')).show();
-}
+};
 
 function viewCustomerDetails(cardNumber) {
     const cust = mockCustomers.find(c => c.card_number === cardNumber);
