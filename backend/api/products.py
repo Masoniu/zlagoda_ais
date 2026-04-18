@@ -8,7 +8,7 @@ from backend.api.dep import get_current_user
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ProductResponse])
+@router.get("/", response_model=List[ProductResponse], dependencies=[Depends(get_current_user)])
 async def get_products(
         category_number: Optional[int] = Query(None, description="Фільтр за категорією"),
         name: Optional[str] = Query(None, description="Пошук за назвою товару"),
