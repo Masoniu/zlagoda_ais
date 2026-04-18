@@ -764,9 +764,18 @@ function setupStoreProductForm() {
 
     const promoSwitch = document.getElementById('spPromoInput');
     const promoText = document.getElementById('promoStatusText');
+    const priceInput = document.getElementById('spPriceInput');
     if (promoSwitch) {
         promoSwitch.addEventListener('change', function() {
             promoText.textContent = this.checked ? "Так" : "Ні";
+            if (this.checked) {
+                priceInput.disabled = true;
+                priceInput.value = "0";
+                priceInput.placeholder = "-20% від базової";
+            } else {
+                priceInput.disabled = false;
+                priceInput.placeholder = "";
+            }
         });
     }
 
@@ -780,7 +789,7 @@ function setupStoreProductForm() {
             UPC: upcInput,
             upc_prom: null,
             id_product: parseInt(document.getElementById('spProductSelect').value),
-            selling_price: parseFloat(document.getElementById('spPriceInput').value),
+            selling_price: parseFloat(document.getElementById('spPriceInput').value) || 0,
             products_number: parseInt(document.getElementById('spQuantityInput').value),
             promotional_product: document.getElementById('spPromoInput').checked
         };
