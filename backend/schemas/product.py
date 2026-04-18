@@ -19,3 +19,10 @@ class ProductResponse(ProductBase):
 
     class Config:
         from_attributes = True
+
+class ProductResponse(ProductBase):
+    id_product: int
+    category_name: str
+
+    class Config:
+        from_attributes = True

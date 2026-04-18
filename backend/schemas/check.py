@@ -15,6 +15,7 @@ class CheckCreate(BaseModel):
 class CheckResponse(BaseModel):
     check_number: str
     id_employee: str
+    cashier_name: str
     card_number: Optional[str]
     print_date: datetime
     sum_total: Decimal

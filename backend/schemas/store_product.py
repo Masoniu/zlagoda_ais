@@ -20,3 +20,11 @@ class StoreProductResponse(StoreProductBase):
     class Config:
         from_attributes = True
         populate_by_name = True
+
+class StoreProductResponse(StoreProductBase):
+    UPC: str = Field(..., alias="UPC")
+    product_name: str
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
