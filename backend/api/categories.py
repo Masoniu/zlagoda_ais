@@ -12,16 +12,18 @@ router = APIRouter()
 @router.get("/", response_model=list[CategoryResponse])
 async def get_all_categories(
         category_name: Optional[str] = Query(None, description="Пошук за назвою"),
+        sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
     query = "SELECT category_number, category_name FROM category WHERE 1=1"
     args = []
-
     if category_name:
         args.append(f"%{category_name}%")
         query += f" AND category_name ILIKE ${len(args)}"
 
-    query += " ORDER BY category_number"
+    order = "DESC" if sort_order.lower() == "desc" else "ASC"
+    query += f" ORDER BY category_name {order}"
+
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
