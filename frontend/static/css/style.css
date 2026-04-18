@@ -322,78 +322,81 @@ body.loaded {
 }
 
 @media print {
-    #navbar_placeholder,
-    main,
-    .welcome_wrapper,
-    .modal-backdrop {
-        display: none !important;
-    }
+  #navbar_placeholder,
+  main,
+  .welcome_wrapper,
+  .modal-backdrop {
+    display: none !important;
+  }
 
-    body, html {
-        height: auto !important;
-        overflow: visible !important;
-        background-color: white !important;
-    }
+  body,
+  html {
+    height: auto !important;
+    overflow: visible !important;
+    background-color: white !important;
+  }
 
-    #reportPreviewModal {
-        display: block !important;
-        position: static !important;
-        opacity: 1 !important;
-        overflow: visible !important;
-    }
+  #reportPreviewModal {
+    display: block !important;
+    position: static !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
 
-    #reportPreviewModal .modal-dialog {
-        max-width: 100% !important;
-        width: 100% !important;
-        margin: 0 !important;
-        transform: none !important;
-    }
+  #reportPreviewModal .modal-dialog {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
 
-    #reportPreviewModal .modal-content {
-        border: none !important;
-        box-shadow: none !important;
-        background-color: white !important;
-    }
+  #reportPreviewModal .modal-content {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: white !important;
+  }
 
-    #reportPreviewModal .modal-header,
-    #reportPreviewModal .modal-footer {
-        display: none !important;
-    }
+  #reportPreviewModal .modal-header,
+  #reportPreviewModal .modal-footer {
+    display: none !important;
+  }
 
-    #reportPrintBody {
-        padding: 0 !important;
-    }
+  #reportPrintBody {
+    padding: 0 !important;
+  }
 
-    table {
-        page-break-inside: auto;
-        width: 100% !important;
-    }
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
+  table {
+    page-break-inside: auto;
+    width: 100% !important;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
 
-    thead {
-        display: table-header-group !important;
-    }
-    tfoot {
-        display: table-footer-group !important;
-    }
+  thead {
+    display: table-header-group !important;
+  }
+  tfoot {
+    display: table-footer-group !important;
+  }
 
-    .report-table-styled th {
-        background-color: #eee !important;
-        -webkit-print-color-adjust: exact;
-    }
+  .report-table-styled th {
+    background-color: #eee !important;
+    -webkit-print-color-adjust: exact;
+  }
 
-    .report-no-border, .report-no-border th, .report-no-border td {
-        border: none !important;
-        background-color: white !important;
-    }
+  .report-no-border,
+  .report-no-border th,
+  .report-no-border td {
+    border: none !important;
+    background-color: white !important;
+  }
 
-    @page {
-        margin: 1cm 1.5cm;
-        size: A4;
-    }
+  @page {
+    margin: 1cm 1.5cm;
+    size: A4;
+  }
 }
 
 body.cashier-mode .btn_edit,
@@ -479,4 +482,16 @@ body.cashier-mode .cashier-hide-col {
 .form-check-input.zlagoda-checkbox:focus {
   box-shadow: 0 0 0 0.25rem rgba(55, 31, 38, 0.25) !important;
   border-color: var(--text-color) !important;
+}
+
+.btn_sale {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+  border: none !important;
+  transition: 0.2s ease-in-out;
+}
+
+.btn_sale:hover {
+  background-color: var(--primary-color) !important;
+  color: white !important;
 }
