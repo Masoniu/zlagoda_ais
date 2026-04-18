@@ -131,13 +131,16 @@ async def update_store_product(
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари в магазині")
 
-    if item_data.promotional_product:
-        if not item_data.upc_prom:
-            raise HTTPException(status_code=400,
-                                detail="Для акційного товару необхідно вказати UPC звичайного товару (upc_prom)")
-        item_data.selling_price = await calculate_promo_price(conn, item_data.upc_prom)
-    else:
-        item_data.upc_prom = None
+    provided_fields = item_data.model_dump(exclude_unset=True)
+
+    if 'promotional_product' in provided_fields:
+        if item_data.promotional_product is True:
+            if not item_data.upc_prom:
+                raise HTTPException(status_code=400,
+                                    detail="Для акційного товару необхідно вказати UPC звичайного товару (upc_prom)")
+            item_data.selling_price = await calculate_promo_price(conn, item_data.upc_prom)
+        elif item_data.promotional_product is False:
+            item_data.upc_prom = None
 
     try:
         update_fields = []
@@ -146,6 +149,9 @@ async def update_store_product(
         if item_data.upc_prom is not None:
             update_fields.append(f"upc_prom = ${len(update_values) + 1}")
             update_values.append(item_data.upc_prom)
+        elif 'upc_prom' in provided_fields and item_data.upc_prom is None:
+            update_fields.append(f"upc_prom = ${len(update_values) + 1}")
+            update_values.append(None)
         
         if item_data.id_product is not None:
             update_fields.append(f"id_product = ${len(update_values) + 1}")
