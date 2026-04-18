@@ -47,6 +47,16 @@ function debounce(func, timeout = 300) {
     };
 }
 
+function escHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 async function apiFetch(endpoint) {
     const token = sessionStorage.getItem('token');
     if (!token) return [];
@@ -447,37 +457,39 @@ function renderPosTable() {
 function populatePosDatalists() {
     const upcList = document.getElementById('posUpcList');
     if (upcList) {
-        upcList.innerHTML = '';
-        mockStoreProducts.forEach(sp => {
-            const name = sp.product_name || 'Невідомий товар';
-            upcList.innerHTML += `<option value="${sp.upc}">${name} (Ціна: ${sp.selling_price} грн, Залишок: ${sp.products_number} шт)</option>`;
-        });
+        upcList.innerHTML = mockStoreProducts.map(sp =>
+            `<option value="${escHtml(sp.upc)}">${escHtml(sp.product_name)} (Ціна: ${sp.selling_price} грн, Залишок: ${sp.products_number} шт)</option>`
+        ).join('');
     }
+
     const cardList = document.getElementById('posCardList');
     if (cardList) {
-        cardList.innerHTML = '';
-        mockCustomers.forEach(c => {
-            cardList.innerHTML += `<option value="${c.card_number}">${c.surname} ${c.name[0]}. (Знижка: ${c.percent}%, Тел: ${c.phone})</option>`;
-        });
+        cardList.innerHTML = mockCustomers.map(c =>
+            `<option value="${escHtml(c.card_number)}">${escHtml(c.surname)} ${escHtml(c.name[0])}. (Знижка: ${c.percent}%, Тел: ${escHtml(c.phone)})</option>`
+        ).join('');
     }
 }
 
 function populateCategoryDropdown() {
     const select = document.getElementById('categorySelectInput');
     if (!select) return;
-    select.innerHTML = '<option value="" selected disabled>Оберіть категорію...</option>';
-    mockCategories.forEach(cat => {
-        select.innerHTML += `<option value="${cat.category_number}">${cat.category_name}</option>`;
-    });
+    const defaultOption = '<option value="" selected disabled>Оберіть категорію...</option>';
+    const options = mockCategories.map(cat =>
+        `<option value="${escHtml(cat.category_number)}">${escHtml(cat.category_name)}</option>`
+    ).join('');
+
+    select.innerHTML = defaultOption + options;
 }
 
 function populateProductDropdown() {
     const select = document.getElementById('spProductSelect');
     if (!select) return;
-    select.innerHTML = '<option value="" selected disabled>Оберіть товар з довідника...</option>';
-    mockProducts.forEach(prod => {
-        select.innerHTML += `<option value="${prod.id}">${prod.name} (${prod.manufacturer || 'Без виробника'})</option>`;
-    });
+    const defaultOption = '<option value="" selected disabled>Оберіть товар з довідника...</option>';
+    const options = mockProducts.map(prod =>
+        `<option value="${escHtml(prod.id)}">${escHtml(prod.name)} (${escHtml(prod.manufacturer) || 'Без виробника'})</option>`
+    ).join('');
+
+    select.innerHTML = defaultOption + options;
 }
 
 function displayUserName() {
