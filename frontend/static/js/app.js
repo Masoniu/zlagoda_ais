@@ -146,15 +146,25 @@ async function loadRealDataFromDB() {
     }
     // 5. Працівники
     if (document.getElementById('employeeTableBody') || document.getElementById('checkTableBody')) {
-        const dbEmployees = await apiFetch('/employees/');
-        mockEmployees = dbEmployees.map(e => ({
-            id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
-            role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
-            phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
-        }));
-        if (document.getElementById('employeeTableBody')) {
-            renderEmployees(mockEmployees);
-            setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
+        let dbEmployees = [];
+        // Касир не має права бачити всіх, тому вантажимо лише його профіль
+        if (sessionStorage.getItem('userRole') === 'Менеджер') {
+            dbEmployees = await apiFetch('/employees/');
+        } else {
+            const me = await apiFetch('/employees/me');
+            if (me && me.id_employee) dbEmployees = [me];
+        }
+        // Перевіряємо, чи отримали масив, щоб уникнути помилок
+        if (Array.isArray(dbEmployees)) {
+            mockEmployees = dbEmployees.map(e => ({
+                id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
+                role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
+                phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
+            }));
+            if (document.getElementById('employeeTableBody')) {
+                renderEmployees(mockEmployees);
+                setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
+            }
         }
     }
     // 6. Чеки
