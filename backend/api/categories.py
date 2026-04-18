@@ -1,15 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import asyncpg
-
+from fastapi import Query
+from typing import Optional
 from backend.core.database import get_db_conn
 from backend.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
 from backend.api.dep import get_current_user
 
 router = APIRouter()
 
+
 @router.get("/", response_model=list[CategoryResponse])
-async def get_all_categories(conn: asyncpg.Connection = Depends(get_db_conn)):
-    result = await conn.fetch("SELECT category_number, category_name FROM category ORDER BY category_number")
+async def get_all_categories(
+        category_name: Optional[str] = Query(None, description="Пошук за назвою"),
+        conn: asyncpg.Connection = Depends(get_db_conn)
+):
+    query = "SELECT category_number, category_name FROM category WHERE 1=1"
+    args = []
+
+    if category_name:
+        args.append(f"%{category_name}%")
+        query += f" AND category_name ILIKE ${len(args)}"
+
+    query += " ORDER BY category_number"
+    result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
 @router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
