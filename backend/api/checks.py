@@ -113,6 +113,7 @@ async def delete_check(
 
 @router.get("/")
 async def get_checks(
+        check_number: Optional[str] = Query(None, description="Пошук за номером"),
         start_date: Optional[datetime] = Query(None, description="Початкова дата (YYYY-MM-DD)"),
         end_date: Optional[datetime] = Query(None, description="Кінцева дата (YYYY-MM-DD)"),
         id_employee: Optional[str] = Query(None, description="ID касира (тільки для Менеджера)"),
@@ -127,6 +128,10 @@ async def get_checks(
             WHERE 1 = 1 \
             """
     args = []
+
+    if check_number:
+        args.append(f"%{check_number}%")
+        query += f" AND c.check_number ILIKE ${len(args)}"
 
     if current_user["empl_role"] == "Касир":
         args.append(current_user["id_employee"])
