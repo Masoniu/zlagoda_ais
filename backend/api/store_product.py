@@ -1,46 +1,56 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 import asyncpg
 from typing import List, Optional
+from decimal import Decimal
 
 from backend.core.database import get_db_conn
 from backend.schemas.store_product import StoreProductCreate, StoreProductResponse, StoreProductUpdate
 from backend.api.dep import get_current_user
 
 router = APIRouter()
+
+async def calculate_promo_price(conn: asyncpg.Connection, upc_prom: str) -> Decimal:
+    """Calculate 20% discount price from regular product"""
+    reg_price = await conn.fetchval("SELECT selling_price FROM store_product WHERE upc = $1", upc_prom)
+    if not reg_price:
+        raise HTTPException(status_code=404, detail="Звичайний товар за вказаним upc_prom не знайдено")
+    return round(Decimal(str(reg_price)) * Decimal('0.8'), 4)
+
+
 @router.get("/", response_model=List[StoreProductResponse])
 async def get_all_store_products(
         upc: Optional[str] = Query(None, description="Пошук за UPC"),
         promotional: Optional[bool] = Query(None, description="True - акційні, False - неакційні, None - всі"),
         sort_by: Optional[str] = Query("name", description="Сортування: 'name' або 'quantity'"),
+        sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
+    if sort_by.lower() not in ["name", "quantity"]:
+        sort_by = "name"
+    if sort_order.lower() not in ["asc", "desc"]:
+        sort_order = "asc"
+    
     query = """
-            SELECT sp.upc      AS "UPC",
-                   sp.upc_prom AS "UPC_prom",
-                   sp.id_product,
-                   sp.selling_price,
-                   sp.products_number,
-                   sp.promotional_product,
-                   p.product_name
+            SELECT sp.upc AS "UPC", sp.upc_prom AS "UPC_prom", sp.id_product,
+                   sp.selling_price, sp.products_number, sp.promotional_product, p.product_name 
             FROM store_product sp
-                     JOIN product p ON sp.id_product = p.id_product
-            WHERE 1 = 1 \
+            JOIN product p ON sp.id_product = p.id_product
+            WHERE 1 = 1 
             """
     args = []
-
     if upc:
         args.append(f"%{upc}%")
         query += f" AND sp.upc ILIKE ${len(args)}"
-
     if promotional is not None:
         args.append(promotional)
         query += f" AND sp.promotional_product = ${len(args)}"
 
-    if sort_by == "quantity":
-        query += " ORDER BY sp.products_number ASC"
+    order = "DESC" if sort_order.lower() == "desc" else "ASC"
+    if sort_by.lower() == "quantity":
+        query += f" ORDER BY sp.products_number {order}"
     else:
-        query += " ORDER BY p.product_name ASC"
+        query += f" ORDER BY p.product_name {order}"
 
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
@@ -85,28 +95,30 @@ async def create_store_product(
     if upc_check:
         raise HTTPException(status_code=400, detail="Товар з таким UPC вже існує")
 
+    # Calculate promo price if promotional
     if item.promotional_product:
         if not item.upc_prom:
             raise HTTPException(status_code=400,
                                 detail="Для акційного товару необхідно вказати UPC звичайного товару (upc_prom)")
-
-        reg_price = await conn.fetchval("SELECT selling_price FROM store_product WHERE upc = $1", item.upc_prom)
-        if not reg_price:
-            raise HTTPException(status_code=404, detail="Звичайний товар за вказаним UPC_prom не знайдено")
-
-        item.selling_price = round(reg_price * Decimal('0.8'), 4)
+        item.selling_price = await calculate_promo_price(conn, item.upc_prom)
     else:
         item.upc_prom = None
 
-    new_sp = await conn.fetchrow("""
-                                 INSERT INTO store_product (upc, upc_prom, id_product, selling_price, products_number,
-                                                            promotional_product)
-                                 VALUES ($1, $2, $3, $4, $5, $6) 
-                                 RETURNING upc AS "UPC", upc_prom AS "upc_prom", id_product, selling_price, products_number, promotional_product
-                                 """, item.UPC, item.upc_prom, item.id_product, item.selling_price,
-                                 item.products_number, item.promotional_product)
+    try:
+        new_sp = await conn.fetchrow("""
+            INSERT INTO store_product (upc, upc_prom, id_product, selling_price, products_number,
+                                       promotional_product)
+            VALUES ($1, $2, $3, $4, $5, $6) 
+            RETURNING upc AS "UPC", upc_prom AS "UPC_prom", id_product, selling_price, products_number, promotional_product
+        """, item.UPC, item.upc_prom, item.id_product, item.selling_price,
+            item.products_number, item.promotional_product)
 
-    return dict(new_sp)
+        return dict(new_sp)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Товар з таким UPC вже існує"
+        )
 
 
 @router.put("/{upc}", response_model=StoreProductResponse)
@@ -118,35 +130,56 @@ async def update_store_product(
 ):
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари в магазині")
+
     if item_data.promotional_product:
         if not item_data.upc_prom:
             raise HTTPException(status_code=400,
                                 detail="Для акційного товару необхідно вказати UPC звичайного товару (upc_prom)")
-
-        reg_price = await conn.fetchval("SELECT selling_price FROM store_product WHERE upc = $1", item_data.upc_prom)
-        if not reg_price:
-            raise HTTPException(status_code=404, detail="Звичайний товар за вказаним UPC_prom не знайдено")
-
-        item_data.selling_price = round(reg_price * Decimal('0.8'), 4)
+        item_data.selling_price = await calculate_promo_price(conn, item_data.upc_prom)
     else:
         item_data.upc_prom = None
 
-    updated_sp = await conn.fetchrow("""
-                                     UPDATE store_product
-                                     SET upc_prom            = $1,
-                                         id_product          = $2,
-                                         selling_price       = $3,
-                                         products_number     = $4,
-                                         promotional_product = $5
-                                     WHERE upc = $6 
-                                     RETURNING upc AS "UPC", upc_prom AS "upc_prom", id_product, selling_price, products_number, promotional_product
-                                     """, item_data.upc_prom, item_data.id_product, item_data.selling_price,
-                                     item_data.products_number, item_data.promotional_product, upc)
+    try:
+        update_fields = []
+        update_values = []
+        
+        if item_data.upc_prom is not None:
+            update_fields.append(f"upc_prom = ${len(update_values) + 1}")
+            update_values.append(item_data.upc_prom)
+        
+        if item_data.id_product is not None:
+            update_fields.append(f"id_product = ${len(update_values) + 1}")
+            update_values.append(item_data.id_product)
+        
+        if item_data.selling_price is not None:
+            update_fields.append(f"selling_price = ${len(update_values) + 1}")
+            update_values.append(item_data.selling_price)
+        
+        if item_data.products_number is not None:
+            update_fields.append(f"products_number = ${len(update_values) + 1}")
+            update_values.append(item_data.products_number)
+        
+        if item_data.promotional_product is not None:
+            update_fields.append(f"promotional_product = ${len(update_values) + 1}")
+            update_values.append(item_data.promotional_product)
+        
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="Не надано жодних полів для оновлення")
+        
+        update_values.append(upc)
+        query = f"UPDATE store_product SET {', '.join(update_fields)} WHERE upc = ${len(update_values)} RETURNING upc AS \"UPC\", upc_prom AS \"UPC_prom\", id_product, selling_price, products_number, promotional_product"
+        
+        updated_sp = await conn.fetchrow(query, *update_values)
 
-    if not updated_sp:
-        raise HTTPException(status_code=404, detail="Товар в магазині не знайдено")
+        if not updated_sp:
+            raise HTTPException(status_code=404, detail="Товар в магазині не знайдено")
 
-    return dict(updated_sp)
+        return dict(updated_sp)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Товар з таким UPC вже існує"
+        )
 
 
 @router.delete("/{upc}", status_code=status.HTTP_204_NO_CONTENT)
@@ -161,7 +194,7 @@ async def delete_store_product(
     try:
         result = await conn.fetchval("DELETE FROM store_product WHERE upc = $1 RETURNING upc", upc)
         if not result:
-            raise HTTPException(status_code=404, detail="Store product not found")
+            raise HTTPException(status_code=404, detail="Товар в магазині не знайдено")
         return None
 
     except asyncpg.exceptions.ForeignKeyViolationError:
