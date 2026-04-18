@@ -377,6 +377,10 @@ body.loaded {
         margin: 1.5cm;
         size: A4;
     }
+
+  .report-no-border {
+        border: none !important;
+    }
 }
 
 body.cashier-mode .btn_edit,

@@ -1073,31 +1073,60 @@ window.generateReport = (pageTitle, tableBodyId) => {
             }
         }
     });
-    document.getElementById('reportPreviewTitle').textContent = pageTitle;
     const printBody = document.getElementById('reportPrintBody');
     printBody.innerHTML = '';
-    
-    // ВЕРХНІЙ КОЛОНТИТУЛ
-    const printHeader = document.createElement('div');
-    printHeader.className = 'd-none d-print-block text-center mb-4';
-    printHeader.innerHTML = `
-        <h2 style="font-weight: 800; color: #333;">Міні-супермаркет «ZLAGODA»</h2>
-        <h4 style="color: #666;">Офіційний звіт: ${pageTitle}</h4>
-        <hr style="border-top: 2px solid #000; margin-bottom: 20px;">
-    `;
-    printBody.appendChild(printHeader);
-    tableClone.className = 'table table-bordered table-striped w-100';
-    printBody.appendChild(tableClone);
+    document.getElementById('reportPreviewTitle').textContent = pageTitle;
+    const colCount = tableClone.querySelector('tbody tr') ? tableClone.querySelector('tbody tr').children.length : 1;
+    const thead = tableClone.querySelector('thead');
+    thead.classList.remove('zlagoda_table_header');
+    const headerCells = thead.querySelectorAll('th');
+    headerCells.forEach(th => {
+        th.style.backgroundColor = "white";
+        th.style.color = "black";
+        th.style.borderBottom = "2px solid black";
+        const icon = th.querySelector('.bi-arrow-down-up');
+        if (icon) icon.remove();
+    });
 
-    // НИЖНІЙ КОЛОНТИТУЛ
-    const printFooter = document.createElement('div');
-    printFooter.className = 'd-none d-print-block text-center mt-5';
-    const now = new Date().toLocaleString('uk-UA');
-    printFooter.innerHTML = `
-        <hr style="border-top: 2px solid #000; margin-top: 20px;">
-        <p style="font-style: italic; color: #555;">Згенеровано автоматизованою інформаційною системою ZLAGODA. Дата формування: ${now}</p>
+    //ВЕРХНІЙ КОЛОНТИТУЛ
+    const headerRow = document.createElement('tr');
+    const headerCell = document.createElement('th');
+    headerCell.colSpan = colCount;
+    headerCell.className = "report-no-border";
+    headerCell.style.backgroundColor = "white";
+    headerCell.style.textAlign = "center";
+    headerCell.style.paddingBottom = "20px";
+    headerCell.innerHTML = `
+        <h2 style="font-weight: 800; color: black; margin-bottom: 5px; font-size: 24px;">Міні-супермаркет «ZLAGODA»</h2>
+        <h4 style="color: #444; margin-bottom: 15px; font-size: 18px;">Офіційний звіт: ${pageTitle}</h4>
+        <div style="border-bottom: 2px solid black; width: 100%;"></div>
     `;
-    printBody.appendChild(printFooter);
+    thead.insertBefore(headerRow, thead.firstChild);
+
+    //НИЖНІЙ КОЛОНТИТУЛ
+    let tfoot = tableClone.querySelector('tfoot');
+    if (!tfoot) {
+        tfoot = document.createElement('tfoot');
+        tableClone.appendChild(tfoot);
+    }
+    const footerRow = document.createElement('tr');
+    const footerCell = document.createElement('td');
+    footerCell.colSpan = colCount;
+    footerCell.className = "report-no-border";
+    footerCell.style.backgroundColor = "white";
+    footerCell.style.textAlign = "center";
+    footerCell.style.paddingTop = "20px";
+    const now = new Date().toLocaleString('uk-UA');
+    footerCell.innerHTML = `
+        <div style="border-top: 2px solid black; width: 100%; margin-bottom: 10px;"></div>
+        <p style="font-style: italic; color: #555; font-size: 12px; margin: 0;">
+            Згенеровано автоматизованою інформаційною системою ZLAGODA. Дата формування: ${now}
+        </p>
+    `;
+    footerRow.appendChild(footerCell);
+    tfoot.appendChild(footerRow);
+    tableClone.className = 'table table-bordered w-100 mb-0';
+    printBody.appendChild(tableClone);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('reportPreviewModal')).show();
 };
 
