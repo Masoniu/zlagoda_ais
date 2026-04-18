@@ -61,19 +61,10 @@
             <thead class="zlagoda_table_header">
               <tr>
                 <th class="ps-4">ID</th>
-                <th
-                  class="sortable-header"
-                  onclick="
-                    sortTableData(
-                      mockCategories,
-                      'category_name',
-                      'string',
-                      renderCategories,
-                    )
-                  "
-                >
-                  Назва категорії
-                  <i class="bi bi-arrow-down-up small text-muted ms-1"></i>
+                <th class="sortable-header" onclick="handleSort('categories')">
+                    Назва категорії
+                    <i class="bi bi-arrow-down-up small text-muted ms-1">
+                    </i>
                 </th>
                 <th class="text-end pe-4">Дії</th>
               </tr>

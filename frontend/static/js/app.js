@@ -21,7 +21,14 @@ let mockCustomers = [];
 let mockChecks = [];
 let mockSales = [];
 
-// Зберігаємо стан фільтрів для модального вікна
+let currentSort = {
+    categories: { order: 'asc' },
+    products: { order: 'asc' },
+    storeProducts: { by: 'name', order: 'asc' },
+    customers: { order: 'asc' },
+    employees: { order: 'asc' }
+};
+
 let savedFilters = {
     'employees': { manager: true, cashier: true },
     'customers': { percent: 0 },
@@ -109,128 +116,143 @@ async function fetchAndDisplayTotalSum(queryString = '') {
     }
 }
 
+window.loadCategories = async (query = '') => {
+    let url = `/categories/?sort_order=${currentSort.categories.order}`;
+    if (query) url += `&category_name=${encodeURIComponent(query)}`;
+
+    mockCategories = await apiFetch(url);
+    if (document.getElementById('categoryTableBody')) renderCategories(mockCategories);
+};
+
+window.loadProducts = async (query = '') => {
+    let url = `/products/?sort_order=${currentSort.products.order}`;
+    if (query) url += `&name=${encodeURIComponent(query)}`;
+
+    const dbProducts = await apiFetch(url);
+    mockProducts = dbProducts.map(p => ({
+        id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
+        chars: p.characteristics, category_id: p.category_number, category_name: p.category_name
+    }));
+
+    if (document.getElementById('productTableBody')) {
+        renderProducts(mockProducts);
+        populateCategoryDropdown();
+    }
+};
+
+window.loadStoreProducts = async (query = '') => {
+    let url = `/store-products/?sort_by=${currentSort.storeProducts.by}&sort_order=${currentSort.storeProducts.order}`;
+    if (query) url += `&upc=${encodeURIComponent(query)}`;
+
+    const dbStoreProducts = await apiFetch(url);
+    mockStoreProducts = dbStoreProducts.map(sp => ({
+        upc: sp.upc || sp.UPC, id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
+        products_number: sp.products_number, promotional_product: sp.promotional_product, product_name: sp.product_name
+    }));
+
+    if (document.getElementById('storeProductTableBody')) {
+        renderStoreProducts(mockStoreProducts);
+        populateProductDropdown();
+    }
+};
+
+window.loadCustomers = async (query = '') => {
+    let url = `/customer-cards/?sort_order=${currentSort.customers.order}`;
+    if (query) url += `&surname=${encodeURIComponent(query)}`;
+
+    const dbCustomers = await apiFetch(url);
+    mockCustomers = dbCustomers.map(c => ({
+        card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
+        phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
+    }));
+    if (document.getElementById('customerTableBody')) renderCustomers(mockCustomers);
+};
+
+window.loadEmployees = async (query = '') => {
+    if (sessionStorage.getItem('userRole') !== 'Менеджер') {
+        const me = await apiFetch('/employees/me');
+        if (me && me.id_employee) {
+            mockEmployees = [me].map(e => ({
+                id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
+                role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
+                phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
+            }));
+            if (document.getElementById('employeeTableBody')) renderEmployees(mockEmployees);
+        }
+        return;
+    }
+
+    let url = `/employees/?sort_order=${currentSort.employees.order}`;
+    if (query) url += `&surname=${encodeURIComponent(query)}`;
+
+    const dbEmployees = await apiFetch(url);
+    if (Array.isArray(dbEmployees)) {
+        mockEmployees = dbEmployees.map(e => ({
+            id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
+            role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
+            phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
+        }));
+        if (document.getElementById('employeeTableBody')) renderEmployees(mockEmployees);
+    }
+};
+
+window.loadChecks = async (query = '') => {
+    const url = query ? `/checks/?check_number=${encodeURIComponent(query)}` : '/checks/';
+    const dbChecks = await apiFetch(url);
+    mockChecks = dbChecks.map(c => ({
+        check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
+        print_date: new Date(c.print_date).toLocaleString('uk-UA'), sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat), cashier_name: c.cashier_name
+    }));
+    if (document.getElementById('checkTableBody')) renderChecks(mockChecks);
+};
+
+window.handleSort = (entity, column = null) => {
+    currentSort[entity].order = currentSort[entity].order === 'asc' ? 'desc' : 'asc';
+    if (column) currentSort[entity].by = column;
+
+    let query = '';
+    if (entity === 'categories') { query = document.getElementById('categorySearch')?.value || ''; loadCategories(query); }
+    else if (entity === 'products') { query = document.getElementById('productSearch')?.value || ''; loadProducts(query); }
+    else if (entity === 'storeProducts') { query = document.getElementById('storeProductSearch')?.value || ''; loadStoreProducts(query); }
+    else if (entity === 'customers') { query = document.getElementById('customerSearch')?.value || ''; loadCustomers(query); }
+    else if (entity === 'employees') { query = document.getElementById('employeeSearch')?.value || ''; loadEmployees(query); }
+};
+
 async function loadRealDataFromDB() {
     const isPosPage = document.getElementById('posScanForm') !== null;
 
-    // 1. Категорії
     if (document.getElementById('categoryTableBody') || document.getElementById('productTableBody')) {
-        const loadCategories = async (query = '') => {
-            const url = query ? `/categories/?category_name=${encodeURIComponent(query)}` : '/categories/';
-            mockCategories = await apiFetch(url);
-            if (document.getElementById('categoryTableBody')) renderCategories(mockCategories);
-        };
         await loadCategories();
-
         const searchInput = document.getElementById('categorySearch');
         if (searchInput) searchInput.addEventListener('input', debounce((e) => loadCategories(e.target.value.trim())));
     }
 
-    // 2. Товари (каталог)
     if (document.getElementById('productTableBody') || document.getElementById('storeProductTableBody') || isPosPage) {
-        const loadProducts = async (query = '') => {
-            const url = query ? `/products/?name=${encodeURIComponent(query)}` : '/products/';
-            const dbProducts = await apiFetch(url);
-            mockProducts = dbProducts.map(p => ({
-                id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
-                chars: p.characteristics, category_id: p.category_number,
-                category_name: p.category_name // БЕРЕМО З БД!
-            }));
-            if (document.getElementById('productTableBody')) {
-                renderProducts(mockProducts);
-                populateCategoryDropdown();
-            }
-        };
         await loadProducts();
-
         const searchInput = document.getElementById('productSearch');
         if (searchInput) searchInput.addEventListener('input', debounce((e) => loadProducts(e.target.value.trim())));
     }
 
-    // 3. Товари в магазині (партії)
     if (document.getElementById('storeProductTableBody') || isPosPage) {
-        const loadStoreProducts = async (query = '') => {
-            const url = query ? `/store-products/?upc=${encodeURIComponent(query)}` : '/store-products/';
-            const dbStoreProducts = await apiFetch(url);
-            mockStoreProducts = dbStoreProducts.map(sp => ({
-                upc: sp.upc || sp.UPC,
-                id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
-                products_number: sp.products_number, promotional_product: sp.promotional_product,
-                product_name: sp.product_name // БЕРЕМО З БД!
-            }));
-            if (document.getElementById('storeProductTableBody')) {
-                renderStoreProducts(mockStoreProducts);
-                populateProductDropdown();
-            }
-        };
         await loadStoreProducts();
-
         const searchInput = document.getElementById('storeProductSearch');
         if (searchInput) searchInput.addEventListener('input', debounce((e) => loadStoreProducts(e.target.value.trim())));
     }
 
-    // 4. Клієнти
     if (document.getElementById('customerTableBody') || isPosPage) {
-        const loadCustomers = async (query = '') => {
-            const url = query ? `/customer-cards/?surname=${encodeURIComponent(query)}` : '/customer-cards/';
-            const dbCustomers = await apiFetch(url);
-            mockCustomers = dbCustomers.map(c => ({
-                card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
-                phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
-            }));
-            if (document.getElementById('customerTableBody')) renderCustomers(mockCustomers);
-        };
         await loadCustomers();
-
         const searchInput = document.getElementById('customerSearch');
         if (searchInput) searchInput.addEventListener('input', debounce((e) => loadCustomers(e.target.value.trim())));
     }
 
-    // 5. Працівники
     if (document.getElementById('employeeTableBody') || document.getElementById('checkTableBody')) {
-        const loadEmployees = async (query = '') => {
-            let dbEmployees = [];
-            if (sessionStorage.getItem('userRole') === 'Менеджер') {
-                const url = query ? `/employees/?surname=${encodeURIComponent(query)}` : '/employees/';
-                dbEmployees = await apiFetch(url);
-            } else {
-                const me = await apiFetch('/employees/me');
-                if (me && me.id_employee) dbEmployees = [me];
-            }
-            if (Array.isArray(dbEmployees)) {
-                mockEmployees = dbEmployees.map(e => ({
-                    id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
-                    role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
-                    phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
-                }));
-                if (document.getElementById('employeeTableBody')) renderEmployees(mockEmployees);
-            }
-        };
         await loadEmployees();
-
         const searchInput = document.getElementById('employeeSearch');
         if (searchInput) searchInput.addEventListener('input', debounce((e) => loadEmployees(e.target.value.trim())));
     }
 
-    // 6. Чеки
     if (document.getElementById('checkTableBody')) {
-        const loadChecks = async (query = '') => {
-            const url = query ? `/checks/?check_number=${encodeURIComponent(query)}` : '/checks/';
-            const dbChecks = await apiFetch(url);
-            mockChecks = dbChecks.map(c => ({
-                check_number: c.check_number,
-                id_employee: c.id_employee,
-                card_number: c.card_number,
-                print_date: new Date(c.print_date).toLocaleString('uk-UA'),
-                sum_total: parseFloat(c.sum_total),
-                vat: parseFloat(c.vat),
-                cashier_name: c.cashier_name
-            }));
-            renderChecks(mockChecks);
-            const sumParams = query ? `?check_number=${encodeURIComponent(query)}` : '';
-            await fetchAndDisplayTotalSum(sumParams);
-        };
         await loadChecks();
-
         const searchInput = document.getElementById('checkSearch');
         if (searchInput) searchInput.addEventListener('input', debounce((e) => loadChecks(e.target.value.trim())));
     }

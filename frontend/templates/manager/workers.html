@@ -66,19 +66,10 @@
             <thead class="zlagoda_table_header">
               <tr>
                 <th class="ps-4">ID</th>
-                <th
-                  class="sortable-header"
-                  onclick="
-                    sortTableData(
-                      mockEmployees,
-                      'surname',
-                      'string',
-                      renderEmployees,
-                    )
-                  "
-                >
-                  ПІБ
-                  <i class="bi bi-arrow-down-up small text-muted ms-1"></i>
+                <th class="sortable-header" onclick="handleSort('employees')">
+                    ПІБ
+                    <i class="bi bi-arrow-down-up small text-muted ms-1">
+                    </i>
                 </th>
                 <th>Посада</th>
                 <th>Телефон</th>
