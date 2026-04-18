@@ -71,7 +71,7 @@ async def init_db():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS product (
                     id_product SERIAL PRIMARY KEY,
-                    category_number INT NOT NULL REFERENCES category(category_number) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    category_number INT NOT NULL REFERENCES category(category_number) ON DELETE NO ACTION ON UPDATE CASCADE,
                     product_name VARCHAR(50) NOT NULL,
                     manufacturer VARCHAR(50) NOT NULL,
                     characteristics VARCHAR(100) NOT NULL
@@ -82,8 +82,8 @@ async def init_db():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS store_product (
                     upc VARCHAR(12) PRIMARY KEY,
-                    upc_prom VARCHAR(12) REFERENCES store_product(upc) ON DELETE SET NULL,
-                    id_product INT REFERENCES product(id_product) ON DELETE CASCADE,
+                    upc_prom VARCHAR(12) REFERENCES store_product(upc) ON DELETE NO ACTION ON UPDATE CASCADE,
+                    id_product INT REFERENCES product(id_product) ON DELETE NO ACTION ON UPDATE CASCADE,
                     selling_price DECIMAL(10, 4) NOT NULL CHECK (selling_price >= 0),
                     products_number INT NOT NULL CHECK (products_number >= 0),
                     promotional_product BOOLEAN NOT NULL
@@ -94,8 +94,8 @@ async def init_db():
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS "check" (
                     check_number VARCHAR(10) PRIMARY KEY,
-                    id_employee VARCHAR(10) REFERENCES employee(id_employee) ON DELETE CASCADE,
-                    card_number VARCHAR(13) REFERENCES customer_card(card_number) ON DELETE SET NULL,
+                    id_employee VARCHAR(10) REFERENCES employee(id_employee) ON DELETE NO ACTION ON UPDATE CASCADE,
+                    card_number VARCHAR(13) REFERENCES customer_card(card_number) ON DELETE NO ACTION ON UPDATE CASCADE,
                     print_date TIMESTAMP NOT NULL,
                     sum_total DECIMAL(13, 4) NOT NULL CHECK (sum_total >= 0),
                     vat DECIMAL(13, 4) NOT NULL CHECK (vat >= 0)
@@ -105,7 +105,7 @@ async def init_db():
             # 7. Продажі (sale)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS sale (
-                    upc VARCHAR(12) NOT NULL REFERENCES store_product(upc) ON DELETE RESTRICT ON UPDATE CASCADE,
+                    upc VARCHAR(12) NOT NULL REFERENCES store_product(upc) ON DELETE NO ACTION ON UPDATE CASCADE,
                     check_number VARCHAR(10) NOT NULL REFERENCES "check"(check_number) ON DELETE CASCADE ON UPDATE CASCADE,
                     product_number INT NOT NULL CHECK (product_number > 0),
                     selling_price DECIMAL(13, 4) NOT NULL CHECK (selling_price >= 0),
