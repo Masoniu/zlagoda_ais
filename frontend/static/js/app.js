@@ -35,6 +35,14 @@ const API_BASE_URL = 'http://127.0.0.1:8000';
 // ==========================================
 // 2. ФУНКЦІЇ ЗВ'ЯЗКУ З БЕКЕНДОМ (API ADAPTERS)
 // ==========================================
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+}
+
 async function apiFetch(endpoint) {
     const token = sessionStorage.getItem('token');
     if (!token) return [];
@@ -94,88 +102,124 @@ async function apiMutate(endpoint, method, data = null) {
 }
 
 async function loadRealDataFromDB() {
-    // Перевіряємо, чи ми зараз на сторінці каси (POS)
     const isPosPage = document.getElementById('posScanForm') !== null;
 
     // 1. Категорії
     if (document.getElementById('categoryTableBody') || document.getElementById('productTableBody')) {
-        mockCategories = await apiFetch('/categories/');
-        if (document.getElementById('categoryTableBody')) {
-            renderCategories(mockCategories);
-            setupSearch('categorySearch', mockCategories, renderCategories, 'category_name');
-        }
+        const loadCategories = async (query = '') => {
+            const url = query ? `/categories/?category_name=${encodeURIComponent(query)}` : '/categories/';
+            mockCategories = await apiFetch(url);
+            if (document.getElementById('categoryTableBody')) renderCategories(mockCategories);
+        };
+        await loadCategories();
+
+        const searchInput = document.getElementById('categorySearch');
+        if (searchInput) searchInput.addEventListener('input', debounce((e) => loadCategories(e.target.value.trim())));
     }
+
     // 2. Товари (каталог)
     if (document.getElementById('productTableBody') || document.getElementById('storeProductTableBody') || isPosPage) {
-        const dbProducts = await apiFetch('/products/');
-        mockProducts = dbProducts.map(p => ({
-            id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
-            chars: p.characteristics, category_id: p.category_number
-        }));
-        if (document.getElementById('productTableBody')) {
-            renderProducts(mockProducts);
-            populateCategoryDropdown();
-            setupSearch('productSearch', mockProducts, renderProducts, 'name');
-        }
+        const loadProducts = async (query = '') => {
+            const url = query ? `/products/?name=${encodeURIComponent(query)}` : '/products/';
+            const dbProducts = await apiFetch(url);
+            mockProducts = dbProducts.map(p => ({
+                id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
+                chars: p.characteristics, category_id: p.category_number,
+                category_name: p.category_name // БЕРЕМО З БД!
+            }));
+            if (document.getElementById('productTableBody')) {
+                renderProducts(mockProducts);
+                populateCategoryDropdown();
+            }
+        };
+        await loadProducts();
+
+        const searchInput = document.getElementById('productSearch');
+        if (searchInput) searchInput.addEventListener('input', debounce((e) => loadProducts(e.target.value.trim())));
     }
+
     // 3. Товари в магазині (партії)
     if (document.getElementById('storeProductTableBody') || isPosPage) {
-        const dbStoreProducts = await apiFetch('/store-products/');
-        mockStoreProducts = dbStoreProducts.map(sp => ({
-            upc: sp.upc || sp.UPC,
-            id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
-            products_number: sp.products_number, promotional_product: sp.promotional_product
-        }));
-        if (document.getElementById('storeProductTableBody')) {
-            renderStoreProducts(mockStoreProducts);
-            populateProductDropdown();
-            setupSearch('storeProductSearch', mockStoreProducts, renderStoreProducts, 'upc');
-        }
+        const loadStoreProducts = async (query = '') => {
+            const url = query ? `/store-products/?upc=${encodeURIComponent(query)}` : '/store-products/';
+            const dbStoreProducts = await apiFetch(url);
+            mockStoreProducts = dbStoreProducts.map(sp => ({
+                upc: sp.upc || sp.UPC,
+                id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
+                products_number: sp.products_number, promotional_product: sp.promotional_product,
+                product_name: sp.product_name // БЕРЕМО З БД!
+            }));
+            if (document.getElementById('storeProductTableBody')) {
+                renderStoreProducts(mockStoreProducts);
+                populateProductDropdown();
+            }
+        };
+        await loadStoreProducts();
+
+        const searchInput = document.getElementById('storeProductSearch');
+        if (searchInput) searchInput.addEventListener('input', debounce((e) => loadStoreProducts(e.target.value.trim())));
     }
+
     // 4. Клієнти
     if (document.getElementById('customerTableBody') || isPosPage) {
-        const dbCustomers = await apiFetch('/customer-cards/');
-        mockCustomers = dbCustomers.map(c => ({
-            card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
-            phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
-        }));
-        if (document.getElementById('customerTableBody')) {
-            renderCustomers(mockCustomers);
-            setupSearch('customerSearch', mockCustomers, renderCustomers, 'surname');
-        }
+        const loadCustomers = async (query = '') => {
+            const url = query ? `/customer-cards/?surname=${encodeURIComponent(query)}` : '/customer-cards/';
+            const dbCustomers = await apiFetch(url);
+            mockCustomers = dbCustomers.map(c => ({
+                card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
+                phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
+            }));
+            if (document.getElementById('customerTableBody')) renderCustomers(mockCustomers);
+        };
+        await loadCustomers();
+
+        const searchInput = document.getElementById('customerSearch');
+        if (searchInput) searchInput.addEventListener('input', debounce((e) => loadCustomers(e.target.value.trim())));
     }
+
     // 5. Працівники
     if (document.getElementById('employeeTableBody') || document.getElementById('checkTableBody')) {
-        let dbEmployees = [];
-        // Касир не має права бачити всіх, тому вантажимо лише його профіль
-        if (sessionStorage.getItem('userRole') === 'Менеджер') {
-            dbEmployees = await apiFetch('/employees/');
-        } else {
-            const me = await apiFetch('/employees/me');
-            if (me && me.id_employee) dbEmployees = [me];
-        }
-        // Перевіряємо, чи отримали масив, щоб уникнути помилок
-        if (Array.isArray(dbEmployees)) {
-            mockEmployees = dbEmployees.map(e => ({
-                id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
-                role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
-                phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
-            }));
-            if (document.getElementById('employeeTableBody')) {
-                renderEmployees(mockEmployees);
-                setupSearch('employeeSearch', mockEmployees, renderEmployees, 'surname');
+        const loadEmployees = async (query = '') => {
+            let dbEmployees = [];
+            if (sessionStorage.getItem('userRole') === 'Менеджер') {
+                const url = query ? `/employees/?surname=${encodeURIComponent(query)}` : '/employees/';
+                dbEmployees = await apiFetch(url);
+            } else {
+                const me = await apiFetch('/employees/me');
+                if (me && me.id_employee) dbEmployees = [me];
             }
-        }
+            if (Array.isArray(dbEmployees)) {
+                mockEmployees = dbEmployees.map(e => ({
+                    id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
+                    role: e.empl_role, salary: e.salary, start_date: e.date_of_start, birth_date: e.date_of_birth,
+                    phone: e.phone_number, city: e.city, street: e.street, zip: e.zip_code
+                }));
+                if (document.getElementById('employeeTableBody')) renderEmployees(mockEmployees);
+            }
+        };
+        await loadEmployees();
+
+        const searchInput = document.getElementById('employeeSearch');
+        if (searchInput) searchInput.addEventListener('input', debounce((e) => loadEmployees(e.target.value.trim())));
     }
+
     // 6. Чеки
     if (document.getElementById('checkTableBody')) {
-        const dbChecks = await apiFetch('/checks/');
-        mockChecks = dbChecks.map(c => ({
-            check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
-            print_date: new Date(c.print_date).toLocaleString('uk-UA'), sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat)
-        }));
-        renderChecks(mockChecks);
-        setupSearch('checkSearch', mockChecks, renderChecks, 'check_number');
+        const loadChecks = async (query = '') => {
+            const url = query ? `/checks/?check_number=${encodeURIComponent(query)}` : '/checks/';
+            const dbChecks = await apiFetch(url);
+            mockChecks = dbChecks.map(c => ({
+                check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
+                print_date: new Date(c.print_date).toLocaleString('uk-UA'),
+                sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat),
+                cashier_name: c.cashier_name // БЕРЕМО З БД!
+            }));
+            renderChecks(mockChecks);
+        };
+        await loadChecks();
+
+        const searchInput = document.getElementById('checkSearch');
+        if (searchInput) searchInput.addEventListener('input', debounce((e) => loadChecks(e.target.value.trim())));
     }
 
     populatePosDatalists();
@@ -203,7 +247,7 @@ function renderProducts(data) {
     if (!tableBody) return;
     tableBody.innerHTML = data.map(prod => {
         const category = mockCategories.find(c => c.category_number === prod.category_id);
-        const catName = category ? category.category_name : "Невідомо";
+        const catName = prod.category_name || "Невідомо";
         return `
             <tr>
                 <td class="ps-4 text-muted">#${prod.id}</td>
@@ -224,7 +268,7 @@ function renderStoreProducts(data) {
     if (!tableBody) return;
     tableBody.innerHTML = data.map(sp => {
         const productInfo = mockProducts.find(p => p.id === sp.id_product);
-        const productName = productInfo ? productInfo.name : "Невідомий товар";
+        const productName = sp.product_name || "Невідомий товар";
         const promoBadge = sp.promotional_product
             ? '<span class="badge bg-success bg-opacity-10 text-success border border-success p-2 fs-6">Так</span>'
             : '<span class="badge bg-light text-muted fw-normal p-2 fs-6">Ні</span>';
@@ -252,7 +296,7 @@ function renderChecks(data) {
 
     tableBody.innerHTML = data.map(chk => {
         const empl = mockEmployees.find(e => e.id === chk.id_employee);
-        const cashierName = empl ? `${empl.surname} ${empl.name[0]}.` : "Невідомий";
+        const cashierName = chk.cashier_name || "Невідомий";
         return `
             <tr>
                 <td class="ps-4">#${chk.check_number}</td>
@@ -397,19 +441,6 @@ function updateGreeting() {
     const name = sessionStorage.getItem('userName') || "колего";
     let text = hour < 12 ? "Доброго ранку" : hour < 17 ? "Доброго дня" : hour < 21 ? "Доброго вечора" : "Доброї ночі";
     el.textContent = `${text}, ${name}!`;
-}
-
-function setupSearch(inputId, data, renderFn, field) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    input.addEventListener('input', (e) => {
-        const value = e.target.value.toLowerCase();
-        const filtered = data.filter(item => {
-            const fieldValue = item[field] ? item[field].toString().toLowerCase() : '';
-            return fieldValue.includes(value);
-        });
-        renderFn(filtered);
-    });
 }
 
 // ==========================================
@@ -649,34 +680,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     const posForm = document.getElementById('posScanForm');
     const posInput = document.getElementById('posUpcInput');
     if (posForm) {
-        posForm.addEventListener('submit', (e) => {
+        posForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const inputValue = posInput.value.trim().toLowerCase();
-            //пошук за точним UPC АБО назвою товару
-            const storeProduct = mockStoreProducts.find(sp => {
-                if (sp.upc.toLowerCase() === inputValue) return true;
-                const prod = mockProducts.find(p => p.id === sp.id_product);
-                return prod && prod.name.toLowerCase().includes(inputValue);
-            });
-
-            if (storeProduct) {
-                const existingItem = currentReceipt.find(item => item.upc === storeProduct.upc);
+            const inputValue = posInput.value.trim();
+            if (!inputValue) return;
+            // Звртаємося безпосередньо до БД!
+            const storeProduct = await apiFetch(`/store-products/${inputValue}`);
+            if (storeProduct && storeProduct.product_name) {
+                if (storeProduct.products_number <= 0) {
+                    showBeautifulAlert("Цього товару немає в наявності!", 'danger');
+                    return;
+                }
+                const existingItem = currentReceipt.find(item => item.upc === inputValue);
                 if (existingItem) {
+                    if (existingItem.quantity >= storeProduct.products_number) {
+                        showBeautifulAlert(`На полиці залишилось лише ${storeProduct.products_number} шт.`, 'danger');
+                        return;
+                    }
                     existingItem.quantity += 1;
                 } else {
-                    const productInfo = mockProducts.find(p => p.id === storeProduct.id_product);
                     currentReceipt.push({
-                        upc: storeProduct.upc,
-                        name: productInfo ? productInfo.name : "Невідомий товар",
-                        price: storeProduct.selling_price,
-                        quantity: 1
+                        upc: inputValue,
+                        name: storeProduct.product_name,
+                        price: parseFloat(storeProduct.selling_price),
+                        quantity: 1,
+                        max_quantity: storeProduct.products_number
                     });
                 }
                 renderPosTable();
                 calculatePosTotals();
                 posInput.value = '';
             } else {
-                showBeautifulAlert("Товар не знайдено на полицях!", 'danger');
+                showBeautifulAlert("Товар з таким UPC не знайдено!", 'danger');
             }
         });
 
@@ -1263,8 +1298,13 @@ function calculatePosTotals() {
 }
 
 window.changeQty = (index, delta) => {
-    currentReceipt[index].quantity += delta;
-    if (currentReceipt[index].quantity <= 0) currentReceipt.splice(index, 1);
+    const item = currentReceipt[index];
+    if (delta > 0 && item.quantity >= item.max_quantity) {
+        showBeautifulAlert(`Не можна додати більше. На полиці лише: ${item.max_quantity} шт.`, 'danger');
+        return;
+    }
+    item.quantity += delta;
+    if (item.quantity <= 0) currentReceipt.splice(index, 1);
     renderPosTable();
     calculatePosTotals();
 };
