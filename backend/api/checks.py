@@ -71,7 +71,15 @@ async def create_check(
                                    VALUES ($1, $2, $3, $4)
                                    ''', sales_to_insert)
 
-            return dict(new_check)
+            cashier_name = await conn.fetchval(
+                "SELECT empl_surname || ' ' || SUBSTRING(empl_name, 1, 1) || '.' FROM employee WHERE id_employee = $1",
+                current_user["id_employee"]
+            )
+
+            response_data = dict(new_check)
+            response_data["cashier_name"] = cashier_name
+
+            return response_data
 
     except HTTPException:
         raise
