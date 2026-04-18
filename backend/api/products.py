@@ -10,32 +10,28 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ProductResponse])
 async def get_products(
-        category_number: Optional[List[int]] = Query(None, description="Фільтр за категоріями (можна декілька)"),
+        category_number: Optional[int] = Query(None, description="Фільтр за категорією"),
         name: Optional[str] = Query(None, description="Пошук за назвою товару"),
+        sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
     query = """
-            SELECT p.id_product, \
-                   p.category_number, \
-                   p.product_name,
-                   p.manufacturer, \
-                   p.characteristics, \
-                   c.category_name
-            FROM product p
-                     JOIN category c ON p.category_number = c.category_number
-            WHERE 1 = 1 \
-            """
+        SELECT p.id_product, p.category_number, p.product_name, 
+               p.manufacturer, p.characteristics, c.category_name 
+        FROM product p
+        JOIN category c ON p.category_number = c.category_number
+        WHERE 1=1
+    """
     args = []
-
-    if category_number:
+    if category_number is not None:
         args.append(category_number)
-        query += f" AND p.category_number = ANY(${len(args)}::int[])"
-
+        query += f" AND p.category_number = ${len(args)}"
     if name:
         args.append(f"%{name}%")
         query += f" AND p.product_name ILIKE ${len(args)}"
 
-    query += " ORDER BY p.product_name"
+    order = "DESC" if sort_order.lower() == "desc" else "ASC"
+    query += f" ORDER BY p.product_name {order}"
 
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
