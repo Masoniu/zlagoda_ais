@@ -325,12 +325,7 @@ function renderStoreProducts(data) {
 function renderChecks(data) {
     const tableBody = document.getElementById('checkTableBody');
     if (!tableBody) return;
-    const totalSum = data.reduce((sum, chk) => sum + chk.sum_total, 0);
-    const sumElement = document.getElementById('totalChecksSum');
-    if (sumElement) sumElement.textContent = totalSum.toFixed(2);
-
     tableBody.innerHTML = data.map(chk => {
-        const empl = mockEmployees.find(e => e.id === chk.id_employee);
         const cashierName = chk.cashier_name || "Невідомий";
         return `
             <tr>
