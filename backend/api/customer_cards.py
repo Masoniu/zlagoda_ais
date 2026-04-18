@@ -16,9 +16,11 @@ async def get_all_cards(
         percent: Optional[int] = Query(None, description="Фільтр за відсотком знижки"),
         surname: Optional[str] = Query(None, description="Пошук за прізвищем"),
         sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
-        conn: asyncpg.Connection = Depends(get_db_conn),
-        current_user: dict = Depends(get_current_user)
+        conn: asyncpg.Connection = Depends(get_db_conn)
 ):
+    if sort_order.lower() not in ["asc", "desc"]:
+        sort_order = "asc"
+    
     query = "SELECT * FROM customer_card WHERE 1=1"
     args = []
     if percent is not None:
@@ -43,20 +45,20 @@ async def create_card(
     if current_user["empl_role"] not in ["Менеджер", "Касир"]:
         raise HTTPException(status_code=403, detail="Додавати картки можуть лише Менеджер або Касир")
 
-    exists = await conn.fetchval("SELECT 1 FROM customer_card WHERE card_number = $1", card.card_number)
-    if exists:
-        raise HTTPException(status_code=400, detail="Картка з таким номером вже існує")
+    try:
+        new_card = await conn.fetchrow("""
+            INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic,
+                                       phone_number, city, street, zip_code, percent)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+        """, card.card_number, card.cust_surname, card.cust_name, card.cust_patronymic,
+            card.phone_number, card.city, card.street, card.zip_code, card.percent)
 
-    new_card = await conn.fetchrow("""
-                                   INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic,
-                                                              phone_number, city, street, zip_code, percent)
-                                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
-                                   """, card.card_number, card.cust_surname, card.cust_name,
-                                   getattr(card, 'cust_patronymic', None),
-                                   card.phone_number, getattr(card, 'city', None), getattr(card, 'street', None),
-                                   getattr(card, 'zip_code', None), card.percent)
-
-    return dict(new_card)
+        return dict(new_card)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Картка з таким номером вже існує"
+        )
 
 @router.put("/{card_number}", response_model=CustomerCardResponse)
 async def update_card(
@@ -68,27 +70,64 @@ async def update_card(
     if current_user["empl_role"] not in ["Менеджер", "Касир"]:
         raise HTTPException(status_code=403, detail="Оновлювати картки можуть лише Менеджер або Касир")
 
-    updated_card = await conn.fetchrow("""
-                                       UPDATE customer_card
-                                       SET cust_surname    = $1,
-                                           cust_name       = $2,
-                                           cust_patronymic = $3,
-                                           phone_number    = $4,
-                                           city            = $5,
-                                           street          = $6,
-                                           zip_code        = $7,
-                                           percent         = $8
-                                       WHERE card_number = $9 RETURNING *
-                                       """, card_data.cust_surname, card_data.cust_name,
-                                       getattr(card_data, 'cust_patronymic', None),
-                                       card_data.phone_number, getattr(card_data, 'city', None),
-                                       getattr(card_data, 'street', None), getattr(card_data, 'zip_code', None),
-                                       card_data.percent, card_number)
+    provided_fields = card_data.model_dump(exclude_unset=True)
+    
+    if not provided_fields:
+        raise HTTPException(status_code=400, detail="Не надано жодних полів для оновлення")
+    
+    try:
+        update_fields = []
+        update_values = []
+        
+        if 'cust_surname' in provided_fields:
+            update_fields.append(f"cust_surname = ${len(update_values) + 1}")
+            update_values.append(card_data.cust_surname)
+        
+        if 'cust_name' in provided_fields:
+            update_fields.append(f"cust_name = ${len(update_values) + 1}")
+            update_values.append(card_data.cust_name)
+        
+        if 'cust_patronymic' in provided_fields:
+            update_fields.append(f"cust_patronymic = ${len(update_values) + 1}")
+            update_values.append(card_data.cust_patronymic)
+        
+        if 'phone_number' in provided_fields:
+            update_fields.append(f"phone_number = ${len(update_values) + 1}")
+            update_values.append(card_data.phone_number)
+        
+        if 'city' in provided_fields:
+            update_fields.append(f"city = ${len(update_values) + 1}")
+            update_values.append(card_data.city)
+        
+        if 'street' in provided_fields:
+            update_fields.append(f"street = ${len(update_values) + 1}")
+            update_values.append(card_data.street)
+        
+        if 'zip_code' in provided_fields:
+            update_fields.append(f"zip_code = ${len(update_values) + 1}")
+            update_values.append(card_data.zip_code)
+        
+        if 'percent' in provided_fields:
+            # Validate percent is in valid range (schema enforces this, but explicit check for clarity)
+            if not (0 <= card_data.percent <= 100):
+                raise HTTPException(status_code=400, detail="Відсоток знижки повинен бути від 0 до 100")
+            update_fields.append(f"percent = ${len(update_values) + 1}")
+            update_values.append(card_data.percent)
+        
+        update_values.append(card_number)
+        query = f"UPDATE customer_card SET {', '.join(update_fields)} WHERE card_number = ${len(update_values)} RETURNING *"
+        
+        updated_card = await conn.fetchrow(query, *update_values)
 
-    if not updated_card:
-        raise HTTPException(status_code=404, detail="Картку не знайдено")
+        if not updated_card:
+            raise HTTPException(status_code=404, detail="Картку не знайдено")
 
-    return dict(updated_card)
+        return dict(updated_card)
+    except asyncpg.exceptions.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Картка з таким номером або телефоном уже існує"
+        )
 
 @router.delete("/{card_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_card(
@@ -96,7 +135,6 @@ async def delete_card(
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
-    # Видаляє лише Менеджер
     if current_user["empl_role"] != "Менеджер":
         raise HTTPException(status_code=403, detail="Тільки Менеджер може видаляти картки клієнтів")
 
