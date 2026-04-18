@@ -373,13 +373,26 @@ body.loaded {
         page-break-after: auto;
     }
 
-    @page {
-        margin: 1.5cm;
-        size: A4;
+    thead {
+        display: table-header-group !important;
+    }
+    tfoot {
+        display: table-footer-group !important;
     }
 
-  .report-no-border {
+    .report-table-styled th {
+        background-color: #eee !important;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .report-no-border, .report-no-border th, .report-no-border td {
         border: none !important;
+        background-color: white !important;
+    }
+
+    @page {
+        margin: 1cm 1.5cm;
+        size: A4;
     }
 }
 

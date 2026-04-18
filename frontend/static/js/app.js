@@ -1058,6 +1058,7 @@ function viewCustomerDetails(cardNumber) {
 // ==========================================
 // 10. ІНШІ УТИЛІТИ (POS, ОЧИЩЕННЯ)
 // ==========================================
+// Функція для генерації звіту з будь-якої таблиці
 window.generateReport = (pageTitle, tableBodyId) => {
     const tbody = document.getElementById(tableBodyId);
     if (!tbody) return;
@@ -1065,42 +1066,36 @@ window.generateReport = (pageTitle, tableBodyId) => {
     const tableClone = sourceTable.cloneNode(true);
     const rows = tableClone.querySelectorAll('tr');
     rows.forEach(row => {
-        const cells = row.children;
-        if (cells.length > 0) {
-            const lastCell = cells[cells.length - 1];
-            if (lastCell.textContent.includes('Дії') || lastCell.innerHTML.includes('btn') || lastCell.classList.contains('cashier-hide-col')) {
-                lastCell.remove();
-            }
+        const lastCell = row.lastElementChild;
+        if (lastCell && (lastCell.textContent.includes('Дії') || lastCell.innerHTML.includes('btn') || lastCell.classList.contains('cashier-hide-col'))) {
+            lastCell.remove();
         }
+        const icons = row.querySelectorAll('.bi-arrow-down-up');
+        icons.forEach(i => i.remove());
     });
     const printBody = document.getElementById('reportPrintBody');
     printBody.innerHTML = '';
     document.getElementById('reportPreviewTitle').textContent = pageTitle;
-    const colCount = tableClone.querySelector('tbody tr') ? tableClone.querySelector('tbody tr').children.length : 1;
+    const firstRow = tableClone.querySelector('tr');
+    const colCount = firstRow ? firstRow.children.length : 1;
     const thead = tableClone.querySelector('thead');
-    thead.classList.remove('zlagoda_table_header');
-    const headerCells = thead.querySelectorAll('th');
-    headerCells.forEach(th => {
-        th.style.backgroundColor = "white";
-        th.style.color = "black";
-        th.style.borderBottom = "2px solid black";
-        const icon = th.querySelector('.bi-arrow-down-up');
-        if (icon) icon.remove();
-    });
 
     //ВЕРХНІЙ КОЛОНТИТУЛ
     const headerRow = document.createElement('tr');
     const headerCell = document.createElement('th');
     headerCell.colSpan = colCount;
     headerCell.className = "report-no-border";
-    headerCell.style.backgroundColor = "white";
     headerCell.style.textAlign = "center";
-    headerCell.style.paddingBottom = "20px";
+    headerCell.style.paddingBottom = "30px";
+    headerCell.style.backgroundColor = "white";
     headerCell.innerHTML = `
-        <h2 style="font-weight: 800; color: black; margin-bottom: 5px; font-size: 24px;">Міні-супермаркет «ZLAGODA»</h2>
-        <h4 style="color: #444; margin-bottom: 15px; font-size: 18px;">Офіційний звіт: ${pageTitle}</h4>
-        <div style="border-bottom: 2px solid black; width: 100%;"></div>
+        <div style="text-align: center; width: 100%;">
+            <h1 style="font-weight: 800; color: black; margin: 0; font-size: 28px; letter-spacing: 1px;">Міні-супермаркет «ZLAGODA»</h1>
+            <p style="color: #333; margin: 5px 0 15px 0; font-size: 18px; font-weight: 400;">Офіційний звіт: ${pageTitle}</p>
+            <div style="border-bottom: 2px solid black; width: 100%; margin: 0 auto;"></div>
+        </div>
     `;
+    headerRow.appendChild(headerCell);
     thead.insertBefore(headerRow, thead.firstChild);
 
     //НИЖНІЙ КОЛОНТИТУЛ
@@ -1113,19 +1108,29 @@ window.generateReport = (pageTitle, tableBodyId) => {
     const footerCell = document.createElement('td');
     footerCell.colSpan = colCount;
     footerCell.className = "report-no-border";
-    footerCell.style.backgroundColor = "white";
     footerCell.style.textAlign = "center";
     footerCell.style.paddingTop = "20px";
+    footerCell.style.backgroundColor = "white";
     const now = new Date().toLocaleString('uk-UA');
     footerCell.innerHTML = `
-        <div style="border-top: 2px solid black; width: 100%; margin-bottom: 10px;"></div>
-        <p style="font-style: italic; color: #555; font-size: 12px; margin: 0;">
+        <div style="border-top: 1px solid #ccc; width: 100%; margin-bottom: 10px; padding-top: 10px;"></div>
+        <p style="font-style: italic; color: #666; font-size: 12px; margin: 0;">
             Згенеровано автоматизованою інформаційною системою ZLAGODA. Дата формування: ${now}
         </p>
     `;
     footerRow.appendChild(footerCell);
     tfoot.appendChild(footerRow);
-    tableClone.className = 'table table-bordered w-100 mb-0';
+    tableClone.style.backgroundColor = "white";
+    tableClone.style.color = "black";
+    tableClone.className = 'table table-bordered w-100 mb-0 report-table-styled';
+    const ths = tableClone.querySelectorAll('thead th');
+    ths.forEach(th => {
+        if (!th.classList.contains('report-no-border')) {
+            th.style.backgroundColor = "#f8f9fa";
+            th.style.color = "black";
+            th.style.borderColor = "black";
+        }
+    });
     printBody.appendChild(tableClone);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('reportPreviewModal')).show();
 };
