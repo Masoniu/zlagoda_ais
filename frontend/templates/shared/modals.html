@@ -75,40 +75,98 @@
     <div class="modal-content border-0 rounded-4 shadow">
       <div class="modal-header border-0 pb-0">
         <h5 class="modal-title fw-bold" id="filterModalTitle">Фільтрація</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
       </div>
       <div class="modal-body p-4">
-
-        <div id="filter-employees" class="filter-section mb-3" style="display: none;">
+        <div
+          id="filter-employees"
+          class="filter-section mb-3"
+          style="display: none"
+        >
           <label class="form-label small fw-bold mb-2">Посада працівника</label>
           <div class="d-flex gap-3">
             <div class="form-check">
-              <input class="form-check-input zlagoda-checkbox" type="checkbox" value="Менеджер" id="fRoleManager" checked>
-              <label class="form-check-label" for="fRoleManager">Менеджер</label>
+              <input
+                class="form-check-input zlagoda-checkbox"
+                type="checkbox"
+                value="Менеджер"
+                id="fRoleManager"
+                checked
+              />
+              <label class="form-check-label" for="fRoleManager"
+                >Менеджер</label
+              >
             </div>
             <div class="form-check">
-              <input class="form-check-input zlagoda-checkbox" type="checkbox" value="Касир" id="fRoleCashier" checked>
+              <input
+                class="form-check-input zlagoda-checkbox"
+                type="checkbox"
+                value="Касир"
+                id="fRoleCashier"
+                checked
+              />
               <label class="form-check-label" for="fRoleCashier">Касир</label>
             </div>
           </div>
         </div>
 
-        <div id="filter-customers" class="filter-section mb-3" style="display: none;">
-          <label class="form-label small fw-bold mb-2">Знижка клієнта (%)</label>
+        <div
+          id="filter-customers"
+          class="filter-section mb-3"
+          style="display: none"
+        >
+          <label class="form-label small fw-bold mb-2"
+            >Знижка клієнта (%)</label
+          >
           <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-light px-3 fw-bold" onclick="changeFilterPercent(-5)">−</button>
-            <input type="number" class="form-control auth-input text-center" id="filterPercent" min="0" max="100" value="0" style="width: 80px;">
-            <button type="button" class="btn btn-light px-3 fw-bold" onclick="changeFilterPercent(5)">+</button>
+            <button
+              type="button"
+              class="btn btn-light px-3 fw-bold"
+              onclick="changeFilterPercent(-5)"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              class="form-control auth-input text-center"
+              id="filterPercent"
+              min="0"
+              max="100"
+              value="0"
+              style="width: 80px"
+            />
+            <button
+              type="button"
+              class="btn btn-light px-3 fw-bold"
+              onclick="changeFilterPercent(5)"
+            >
+              +
+            </button>
             <span class="text-muted small ms-1">0 = показати всіх</span>
           </div>
         </div>
 
-        <div id="filter-products" class="filter-section mb-3" style="display: none;">
+        <div
+          id="filter-products"
+          class="filter-section mb-3"
+          style="display: none"
+        >
           <label class="form-label small fw-bold mb-2">Категорія товару</label>
-          <div id="filterCategoryList" style="max-height: 220px; overflow-y: auto;"></div>
+          <div
+            id="filterCategoryList"
+            style="max-height: 220px; overflow-y: auto"
+          ></div>
         </div>
 
-        <div id="filter-checks" class="filter-section mb-3" style="display: none;">
+        <div
+          id="filter-checks"
+          class="filter-section mb-3"
+          style="display: none"
+        >
           <label class="form-label small fw-bold mb-2">Касир</label>
           <select class="form-select auth-input mb-3" id="filterCheckCashier">
             <option value="all">Всі касири</option>
@@ -117,16 +175,28 @@
           <div class="d-flex gap-2">
             <div class="flex-fill">
               <label class="form-label small text-muted">З</label>
-              <input type="datetime-local" class="form-control auth-input" id="filterCheckStart">
+              <input
+                type="datetime-local"
+                class="form-control auth-input"
+                id="filterCheckStart"
+              />
             </div>
             <div class="flex-fill">
               <label class="form-label small text-muted">По</label>
-              <input type="datetime-local" class="form-control auth-input" id="filterCheckEnd">
+              <input
+                type="datetime-local"
+                class="form-control auth-input"
+                id="filterCheckEnd"
+              />
             </div>
           </div>
         </div>
 
-        <div id="filter-store-products" class="filter-section mb-3" style="display: none;">
+        <div
+          id="filter-store-products"
+          class="filter-section mb-3"
+          style="display: none"
+        >
           <label class="form-label small fw-bold mb-2">Наявність акції</label>
           <select class="form-select auth-input" id="filterPromoSelect">
             <option value="all">Всі товари</option>
@@ -136,8 +206,20 @@
         </div>
 
         <div class="text-end border-top pt-3 mt-4">
-          <button type="button" class="btn btn-light me-2 fw-bold" data-bs-dismiss="modal">Скасувати</button>
-          <button type="button" class="btn btn-primary px-4 py-2 fw-bold" onclick="applyFilters()">Застосувати фільтри</button>
+          <button
+            type="button"
+            class="btn btn-light me-2 fw-bold"
+            data-bs-dismiss="modal"
+          >
+            Скасувати
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary px-4 py-2 fw-bold"
+            onclick="applyFilters()"
+          >
+            Застосувати фільтри
+          </button>
         </div>
       </div>
     </div>
@@ -145,20 +227,41 @@
 </div>
 
 <!--print-->
-<div class="modal fade" id="reportPreviewModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+<div
+  class="modal fade"
+  id="reportPreviewModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div
+    class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
+  >
     <div class="modal-content border-0 rounded-4 shadow-lg">
       <div class="modal-header border-0 bg-light rounded-top-4">
         <h5 class="modal-title fw-bold">
-          <i class="bi bi-file-earmark-text me-2 icon-zlagoda"></i>Попередній перегляд звіту: <span id="reportPreviewTitle"></span>
+          <i class="bi bi-file-earmark-text me-2 icon-zlagoda"></i>Попередній
+          перегляд звіту: <span id="reportPreviewTitle"></span>
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
       </div>
-      <div class="modal-body p-4" id="reportPrintBody">
-        </div>
+      <div class="modal-body p-4" id="reportPrintBody"></div>
       <div class="modal-footer border-0 bg-light rounded-bottom-4">
-        <button type="button" class="btn btn-secondary fw-bold px-4" data-bs-dismiss="modal">Скасувати</button>
-        <button type="button" class="btn btn-primary fw-bold px-5" onclick="executePrint()">
+        <button
+          type="button"
+          class="btn btn-light btn-secondary fw-bold px-4"
+          data-bs-dismiss="modal"
+        >
+          Скасувати
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary fw-bold px-5"
+          onclick="executePrint()"
+        >
           <i class="bi bi-printer me-2"></i>Підтвердити друк
         </button>
       </div>

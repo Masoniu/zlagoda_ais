@@ -1069,12 +1069,15 @@ function viewCustomerDetails(cardNumber) {
 // 10. ІНШІ УТИЛІТИ (POS, ОЧИЩЕННЯ)
 // ==========================================
 // Функція для генерації звіту з будь-якої таблиці
+// Функція для генерації звіту з будь-якої таблиці
 window.generateReport = (pageTitle, tableBodyId) => {
     const tbody = document.getElementById(tableBodyId);
     if (!tbody) return;
     const sourceTable = tbody.closest('table');
     const tableClone = sourceTable.cloneNode(true);
     const rows = tableClone.querySelectorAll('tr');
+
+    // Видаляємо колонку з кнопками "Дії" та іконки сортування
     rows.forEach(row => {
         const lastCell = row.lastElementChild;
         if (lastCell && (lastCell.textContent.includes('Дії') || lastCell.innerHTML.includes('btn') || lastCell.classList.contains('cashier-hide-col'))) {
@@ -1083,32 +1086,38 @@ window.generateReport = (pageTitle, tableBodyId) => {
         const icons = row.querySelectorAll('.bi-arrow-down-up');
         icons.forEach(i => i.remove());
     });
+
     const printBody = document.getElementById('reportPrintBody');
     printBody.innerHTML = '';
     document.getElementById('reportPreviewTitle').textContent = pageTitle;
+
+    // 1. РОБИМО ТАБЛИЦЮ НА ВСЮ ШИРИНУ ЕКРАНА/ПАПЕРУ
+    tableClone.style.width = '100%';
+    tableClone.style.borderCollapse = 'collapse';
+    tableClone.className = 'table mb-0';
+
+    const thead = tableClone.querySelector('thead');
     const firstRow = tableClone.querySelector('tr');
     const colCount = firstRow ? firstRow.children.length : 1;
-    const thead = tableClone.querySelector('thead');
 
-    //ВЕРХНІЙ КОЛОНТИТУЛ
+    // 2. ВЕРХНІЙ КОЛОНТИТУЛ (Друкується на кожній сторінці)
     const headerRow = document.createElement('tr');
     const headerCell = document.createElement('th');
     headerCell.colSpan = colCount;
-    headerCell.className = "report-no-border";
-    headerCell.style.textAlign = "center";
-    headerCell.style.paddingBottom = "30px";
+    headerCell.style.border = "none";
     headerCell.style.backgroundColor = "white";
+    headerCell.style.paddingBottom = "15px";
     headerCell.innerHTML = `
         <div style="text-align: center; width: 100%;">
-            <h1 style="font-weight: 800; color: black; margin: 0; font-size: 28px; letter-spacing: 1px;">Міні-супермаркет «ZLAGODA»</h1>
-            <p style="color: #333; margin: 5px 0 15px 0; font-size: 18px; font-weight: 400;">Офіційний звіт: ${pageTitle}</p>
-            <div style="border-bottom: 2px solid black; width: 100%; margin: 0 auto;"></div>
+            <h2 style="margin: 0; font-size: 22px; color: black; font-weight: bold;">Міні-супермаркет «ZLAGODA»</h2>
+            <p style="margin: 5px 0 10px; font-size: 16px; color: black;">Офіційний звіт: ${pageTitle}</p>
+            <div style="border-bottom: 2px solid black; width: 100%;"></div>
         </div>
     `;
     headerRow.appendChild(headerCell);
     thead.insertBefore(headerRow, thead.firstChild);
 
-    //НИЖНІЙ КОЛОНТИТУЛ
+    // 3. НИЖНІЙ КОЛОНТИТУЛ (Друкується в кінці сторінки)
     let tfoot = tableClone.querySelector('tfoot');
     if (!tfoot) {
         tfoot = document.createElement('tfoot');
@@ -1117,30 +1126,45 @@ window.generateReport = (pageTitle, tableBodyId) => {
     const footerRow = document.createElement('tr');
     const footerCell = document.createElement('td');
     footerCell.colSpan = colCount;
-    footerCell.className = "report-no-border";
-    footerCell.style.textAlign = "center";
-    footerCell.style.paddingTop = "20px";
+    footerCell.style.border = "none";
     footerCell.style.backgroundColor = "white";
+    footerCell.style.paddingTop = "15px";
+    
     const now = new Date().toLocaleString('uk-UA');
+    const userName = sessionStorage.getItem('userName') || 'Працівник';
     footerCell.innerHTML = `
-        <div style="border-top: 1px solid #ccc; width: 100%; margin-bottom: 10px; padding-top: 10px;"></div>
-        <p style="font-style: italic; color: #666; font-size: 12px; margin: 0;">
-            Згенеровано автоматизованою інформаційною системою ZLAGODA. Дата формування: ${now}
-        </p>
+        <div style="border-top: 2px solid black; width: 100%; margin-bottom: 5px;"></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: black; font-weight: 600;">
+            <span>Сформовано: ${now}</span>
+            <span>Менеджер: ${userName}</span>
+        </div>
     `;
     footerRow.appendChild(footerCell);
     tfoot.appendChild(footerRow);
-    tableClone.style.backgroundColor = "white";
-    tableClone.style.color = "black";
-    tableClone.className = 'table table-bordered w-100 mb-0 report-table-styled';
-    const ths = tableClone.querySelectorAll('thead th');
-    ths.forEach(th => {
-        if (!th.classList.contains('report-no-border')) {
-            th.style.backgroundColor = "#f8f9fa";
-            th.style.color = "black";
-            th.style.borderColor = "black";
-        }
+
+    // Стилізуємо таблицю для принтера (чорні рамки, без фону)
+    tableClone.querySelectorAll('th:not([colspan]), td:not([colspan])').forEach(cell => {
+        cell.style.border = '1px solid black';
+        cell.style.padding = '8px';
+        cell.style.color = 'black';
+        cell.style.backgroundColor = 'white';
     });
+
+    // 4. ТРЮК ДЛЯ ПРИХОВУВАННЯ URL БЕЗ ЗМІНИ STYLE.CSS
+    let printStyle = document.getElementById('dynamicPrintStyle');
+    if (!printStyle) {
+        printStyle = document.createElement('style');
+        printStyle.id = 'dynamicPrintStyle';
+        document.head.appendChild(printStyle);
+    }
+    // Встановлюємо відступи паперу в 0 (знищує URL браузера), але додаємо внутрішній відступ тілу
+    printStyle.innerHTML = `
+        @media print {
+            @page { margin: 0; } 
+            body { padding: 1cm; } 
+        }
+    `;
+
     printBody.appendChild(tableClone);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('reportPreviewModal')).show();
 };
