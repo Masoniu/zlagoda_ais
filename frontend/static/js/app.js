@@ -8,8 +8,6 @@
 // ==========================================
 let itemToDeleteId = null;
 let itemToDeleteType = null;
-let currentSortColumn = '';
-let isAscending = true;
 let currentReceipt = [];
 let appliedCustomer = null;
 
@@ -19,7 +17,6 @@ let mockStoreProducts = [];
 let mockEmployees = [];
 let mockCustomers = [];
 let mockChecks = [];
-let mockSales = [];
 
 let currentSort = {
     categories: { order: 'asc' },
@@ -1441,20 +1438,6 @@ function togglePasswordVisibility() {
         passInput.type = "password";
         icon.classList.replace('bi-eye-slash', 'bi-eye');
     }
-}
-
-function resetStoreProductForm() {
-    const form = document.getElementById('addStoreProductForm');
-    if(form) form.reset();
-    document.querySelector('#addStoreProductModal .modal-title').textContent = "Товар на полиці";
-    document.getElementById('isEditMode').value = "false";
-    const upcInput = document.getElementById('spUpcInput');
-    if (upcInput) {
-        upcInput.readOnly = false;
-        upcInput.classList.remove('bg-light');
-    }
-    const promoText = document.getElementById('promoStatusText');
-    if(promoText) promoText.textContent = "Ні";
 }
 
 function calculatePosTotals() {
