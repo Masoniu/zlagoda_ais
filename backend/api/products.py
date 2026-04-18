@@ -8,34 +8,38 @@ from backend.api.dep import get_current_user
 router = APIRouter()
 
 
-@router.put("/{id_product}", response_model=ProductResponse)
-async def update_product(
-        id_product: int,
-        product_data: ProductUpdate,
-        conn: asyncpg.Connection = Depends(get_db_conn),
-        current_user: dict = Depends(get_current_user)
+# Тут current_user передаємо в dependencies, бо всередині він не використовується
+@router.get("/", response_model=List[ProductResponse], dependencies=[Depends(get_current_user)])
+async def get_products(
+        category_number: Optional[int] = Query(None, description="Фільтр за категорією"),
+        name: Optional[str] = Query(None, description="Пошук за назвою товару"),
+        sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
+        conn: asyncpg.Connection = Depends(get_db_conn)
 ):
-    if current_user["empl_role"] != "Менеджер":
-        raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари")
+    if sort_order.lower() not in ["asc", "desc"]:
+        sort_order = "asc"
 
-    cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1", product_data.category_number)
-    if not cat_check:
-        raise HTTPException(status_code=400, detail="Category not found")
-
-    await conn.execute("""
-        UPDATE product
-        SET category_number = $1, product_name = $2, manufacturer = $3, characteristics = $4
-        WHERE id_product = $5
-    """, product_data.category_number, product_data.product_name, product_data.manufacturer, product_data.characteristics, id_product)
-
-    updated_product = await conn.fetchrow("""
-        SELECT p.id_product, p.category_number, p.product_name, p.manufacturer, p.characteristics, c.category_name 
+    query = """
+        SELECT p.id_product, p.category_number, p.product_name, 
+               p.manufacturer, p.characteristics, c.category_name 
         FROM product p
         JOIN category c ON p.category_number = c.category_number
-        WHERE p.id_product = $1
-    """, id_product)
+        WHERE 1=1
+    """
+    args = []
+    if category_number is not None:
+        args.append(category_number)
+        query += f" AND p.category_number = ${len(args)}"
+    if name:
+        args.append(f"%{name}%")
+        query += f" AND p.product_name ILIKE ${len(args)}"
 
-    return dict(updated_product)
+    order = "DESC" if sort_order.lower() == "desc" else "ASC"
+    query += f" ORDER BY p.product_name {order}"
+
+    result = await conn.fetch(query, *args)
+    return [dict(r) for r in result]
+
 
 @router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
@@ -51,11 +55,21 @@ async def create_product(
         raise HTTPException(status_code=400, detail="Категорія не знайдена")
 
     try:
-        new_product = await conn.fetchrow("""
+        # Спочатку вставляємо і отримуємо ID
+        new_product_id = await conn.fetchval("""
             INSERT INTO product (category_number, product_name, manufacturer, characteristics)
-            VALUES ($1, $2, $3, $4) RETURNING *
+            VALUES ($1, $2, $3, $4) RETURNING id_product
         """, product.category_number, product.product_name,
-            getattr(product, 'manufacturer', 'Невідомо'), product.characteristics)
+                                             getattr(product, 'manufacturer', 'Невідомо'), product.characteristics)
+
+        # Потім дістаємо повний об'єкт із category_name для відповіді API
+        new_product = await conn.fetchrow("""
+            SELECT p.id_product, p.category_number, p.product_name, 
+                   p.manufacturer, p.characteristics, c.category_name 
+            FROM product p
+            JOIN category c ON p.category_number = c.category_number
+            WHERE p.id_product = $1
+        """, new_product_id)
 
         return dict(new_product)
     except asyncpg.exceptions.UniqueViolationError:
@@ -76,33 +90,47 @@ async def update_product(
         raise HTTPException(status_code=403, detail="Тільки Менеджер може оновлювати товари")
 
     if product_data.category_number is not None:
-        cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1", product_data.category_number)
+        cat_check = await conn.fetchval("SELECT 1 FROM category WHERE category_number = $1",
+                                        product_data.category_number)
         if not cat_check:
             raise HTTPException(status_code=400, detail="Категорія не знайдена")
 
     try:
         update_fields = []
         update_values = []
-        
+
         if product_data.category_number is not None:
-            update_fields.append("category_number = $1")
+            update_fields.append(f"category_number = ${len(update_values) + 1}")
             update_values.append(product_data.category_number)
-        
+
         if product_data.product_name is not None:
             update_fields.append(f"product_name = ${len(update_values) + 1}")
             update_values.append(product_data.product_name)
-        
+
+        if product_data.manufacturer is not None:
+            update_fields.append(f"manufacturer = ${len(update_values) + 1}")
+            update_values.append(product_data.manufacturer)
+
         if product_data.characteristics is not None:
             update_fields.append(f"characteristics = ${len(update_values) + 1}")
             update_values.append(product_data.characteristics)
-        
+
         if not update_fields:
             raise HTTPException(status_code=400, detail="Не надано жодних полів для оновлення")
-        
+
         update_values.append(id_product)
-        query = f"UPDATE product SET {', '.join(update_fields)} WHERE id_product = ${len(update_values)} RETURNING *"
-        
-        updated_product = await conn.fetchrow(query, *update_values)
+        query = f"UPDATE product SET {', '.join(update_fields)} WHERE id_product = ${len(update_values)}"
+
+        await conn.execute(query, *update_values)
+
+        # Витягуємо оновлений запис разом з category_name
+        updated_product = await conn.fetchrow("""
+            SELECT p.id_product, p.category_number, p.product_name, 
+                   p.manufacturer, p.characteristics, c.category_name 
+            FROM product p
+            JOIN category c ON p.category_number = c.category_number
+            WHERE p.id_product = $1
+        """, id_product)
 
         if not updated_product:
             raise HTTPException(status_code=404, detail="Товар не знайдено")
@@ -137,5 +165,5 @@ async def delete_product(
     except asyncpg.exceptions.ForeignKeyViolationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Неможливо видалити цей товар з каталогу, оскільки він зараз знаходиться у списку 'Товари в магазині'. Спочатку приберіть його з полиць."
+            detail="Неможливо видалити цей товар з каталогу, оскільки він зараз знаходиться у списку 'Товари в магазині'."
         )
