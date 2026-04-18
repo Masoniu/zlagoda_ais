@@ -383,7 +383,7 @@ body.loaded {
 
   .report-table-styled th {
     background-color: #eee !important;
-    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .report-no-border,
