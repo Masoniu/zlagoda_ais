@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 import asyncpg
-from typing import List
-from fastapi import Query
-from typing import Optional
+from typing import List, Optional
 from backend.core.database import get_db_conn
 from backend.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 from backend.api.dep import get_current_user
@@ -12,7 +10,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ProductResponse])
 async def get_products(
-        category_number: Optional[int] = Query(None, description="Фільтр за категорією"),
+        category_number: Optional[List[int]] = Query(None, description="Фільтр за категоріями (можна декілька)"),
         name: Optional[str] = Query(None, description="Пошук за назвою товару"),
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
@@ -29,9 +27,9 @@ async def get_products(
             """
     args = []
 
-    if category_number is not None:
+    if category_number:
         args.append(category_number)
-        query += f" AND p.category_number = ${len(args)}"
+        query += f" AND p.category_number = ANY(${len(args)}::int[])"
 
     if name:
         args.append(f"%{name}%")

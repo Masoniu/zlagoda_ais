@@ -18,6 +18,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 @router.get("/", response_model=List[EmployeeResponse])
 async def get_all_employees(
         surname: Optional[str] = Query(None, description="Пошук за прізвищем"),
+        role: Optional[List[str]] = Query(None, description="Фільтр за посадами (масив)"),
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
@@ -30,6 +31,10 @@ async def get_all_employees(
     if surname:
         args.append(f"%{surname}%")
         query += f" AND empl_surname ILIKE ${len(args)}"
+
+    if role:
+        args.append(role)
+        query += f" AND empl_role = ANY(${len(args)}::varchar[])"
 
     query += " ORDER BY empl_surname"
     result = await conn.fetch(query, *args)
