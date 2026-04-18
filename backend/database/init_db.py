@@ -11,7 +11,7 @@ async def init_db():
     conn = await asyncpg.connect(DATABASE_URL)
 
     try:
-        print("🔄 Очищення та створення таблиць через SQL...")
+        print("Очищення та створення таблиць через SQL...")
         async with conn.transaction():
             # 0. Видаляємо всі існуючі таблиці (CASCADE видаляє зв'язки)
             await conn.execute("""
@@ -159,7 +159,7 @@ async def init_db():
                 EXECUTE FUNCTION deduct_inventory();
             """)
 
-        print("✅ Базу даних успішно ініціалізовано!")
+        print("Базу даних ініціалізовано!")
 
     except Exception as e:
         print(f"❌ Помилка ініціалізації: {e}")
