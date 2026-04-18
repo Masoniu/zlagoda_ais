@@ -1447,12 +1447,10 @@ window.applyFilters = async () => {
     }
 };
 
-window.openFilterModal = (pageType) => {
+window.openFilterModal = async (pageType) => {
     document.querySelectorAll('.filter-section').forEach(el => el.style.display = 'none');
-
     const section = document.getElementById(`filter-${pageType}`);
     if (section) section.style.display = 'block';
-
     const titles = {
         'employees': 'Вибір персоналу',
         'customers': 'Фільтр за знижкою',
@@ -1461,20 +1459,16 @@ window.openFilterModal = (pageType) => {
         'checks': 'Звіти за період'
     };
     document.getElementById('filterModalTitle').textContent = titles[pageType] || 'Фільтрація';
-
-    // ВІДНОВЛЕННЯ СТАНУ З ПАМ'ЯТІ (savedFilters)
     if (pageType === 'employees') {
         const managerCheck = document.getElementById('fRoleManager');
         const cashierCheck = document.getElementById('fRoleCashier');
         if (managerCheck) managerCheck.checked = savedFilters['employees'].manager;
         if (cashierCheck) cashierCheck.checked = savedFilters['employees'].cashier;
     }
-
     if (pageType === 'customers') {
         const percentInput = document.getElementById('filterPercent');
         if (percentInput) percentInput.value = savedFilters['customers'].percent;
     }
-
     if (pageType === 'products') {
         const container = document.getElementById('filterCategoryList');
         if (container) {
@@ -1482,7 +1476,6 @@ window.openFilterModal = (pageType) => {
                 const isChecked = savedFilters['products'].categories === null
                     ? true
                     : savedFilters['products'].categories.includes(cat.category_number.toString());
-
                 return `
                 <div class="form-check mb-1">
                     <input class="form-check-input zlagoda-checkbox" type="checkbox" value="${cat.category_number}" id="catCheck${cat.category_number}" ${isChecked ? 'checked' : ''}>
@@ -1491,31 +1484,29 @@ window.openFilterModal = (pageType) => {
             `}).join('');
         }
     }
-
     if (pageType === 'store-products') {
         const promoSelect = document.getElementById('filterPromoSelect');
         if (promoSelect) promoSelect.value = savedFilters['store-products'].promo;
     }
-
     if (pageType === 'checks') {
         const select = document.getElementById('filterCheckCashier');
         if (select && select.options.length <= 1) {
-            const cashiers = mockEmployees.filter(e => e.role === 'Касир');
-            cashiers.forEach(c => {
-                const opt = new Option(`${c.surname} ${c.name[0]}.`, c.id);
-                select.add(opt);
-            });
+            try {
+                const cashiers = await apiFetch('/employees/?role=Касир');
+                cashiers.forEach(c => {
+                    const opt = new Option(`${c.empl_surname} ${c.empl_name[0]}.`, c.id_employee);
+                    select.add(opt);
+                });
+            } catch (error) {
+                console.error("Не вдалося завантажити список касирів для фільтра", error);
+            }
         }
-
         if (select) select.value = savedFilters['checks'].cashier;
-
         const startInput = document.getElementById('filterCheckStart');
         if (startInput) startInput.value = savedFilters['checks'].start;
-
         const endInput = document.getElementById('filterCheckEnd');
         if (endInput) endInput.value = savedFilters['checks'].end;
     }
-
     bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).show();
 };
 
