@@ -1349,99 +1349,64 @@ function showBeautifulAlert(message, type = 'danger') {
 }
 
 // ==========================================
-// 11. ФІЛЬТРАЦІЯ ТА СОРТУВАННЯ (ВИПРАВЛЕНО)
+// 11. ФІЛЬТРАЦІЯ НА БЕКЕНДІ (SQL)
 // ==========================================
-
 window.applyFilters = async () => {
     const activeSection = document.querySelector('.filter-section[style*="display: block"]');
     if (!activeSection) return;
-
     const pageType = activeSection.id.replace('filter-', '');
     let endpoint = '';
-    let filteredData = [];
-
     try {
         if (pageType === 'products') {
-            // 1. Отримуємо всі вибрані категорії з чекбоксів
             const checkedCats = Array.from(document.querySelectorAll('#filterCategoryList input:checked')).map(cb => cb.value);
             savedFilters['products'].categories = checkedCats;
-
-            // 2. Отримуємо ПОВНИЙ список товарів з бази
-            const dbProducts = await apiFetch('/products/');
-
-            // 3. Фільтруємо на фронті (порівнюємо p.category_number із вибраними id)
-            filteredData = checkedCats.length > 0
-                ? dbProducts.filter(p => checkedCats.includes(p.category_number.toString()))
-                : dbProducts;
-
-            // 4. Оновлюємо mockProducts та рендеримо
-            mockProducts = filteredData.map(p => ({
-                id: p.id_product,
-                name: p.product_name,
-                manufacturer: p.manufacturer,
-                chars: p.characteristics,
-                category_id: p.category_number // Важливо для renderProducts
+            const params = new URLSearchParams();
+            checkedCats.forEach(id => params.append('category_number', id));
+            endpoint = `/products/${params.toString() ? '?' + params.toString() : ''}`;
+            const dbProducts = await apiFetch(endpoint);
+            mockProducts = dbProducts.map(p => ({
+                id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
+                chars: p.characteristics, category_id: p.category_number,
+                category_name: p.category_name // з БД
             }));
             renderProducts(mockProducts);
-
         } else if (pageType === 'customers') {
             const percentVal = document.getElementById('filterPercent').value;
             savedFilters['customers'].percent = percentVal;
-            // Якщо 0 або пусто - вантажимо всіх. Інакше - шукаємо конкретний відсоток.
-            if (!percentVal || percentVal === "0") {
-                endpoint = '/customer-cards/';
-            } else {
-                endpoint = `/customer-cards/?percent=${percentVal}`;
-            }
+            endpoint = (!percentVal || percentVal === "0") ? '/customer-cards/' : `/customer-cards/?percent=${percentVal}`;
             const dbCustomers = await apiFetch(endpoint);
             mockCustomers = dbCustomers.map(c => ({
-                card_number: c.card_number,
-                surname: c.cust_surname,
-                name: c.cust_name,
-                patronymic: c.cust_patronymic,
-                phone: c.phone_number,
-                city: c.city,
-                street: c.street,
-                zip: c.zip_code,
-                percent: c.percent // Переконайся, що в БД це поле так називається
+                card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
+                phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
             }));
             renderCustomers(mockCustomers);
-
         } else if (pageType === 'employees') {
-            // Логіка для працівників (залишаємо як було, вона працює через чекбокси)
             const isManager = document.getElementById('fRoleManager').checked;
             const isCashier = document.getElementById('fRoleCashier').checked;
             savedFilters['employees'].manager = isManager;
             savedFilters['employees'].cashier = isCashier;
-
-            let allEmpl = await apiFetch('/employees/');
-            if (isManager && !isCashier) filteredData = allEmpl.filter(e => e.empl_role === 'Менеджер');
-            else if (!isManager && isCashier) filteredData = allEmpl.filter(e => e.empl_role === 'Касир');
-            else filteredData = allEmpl;
-
-            mockEmployees = filteredData.map(e => ({
-                id: e.id_employee, surname: e.empl_surname, name: e.empl_name,
+            const params = new URLSearchParams();
+            if (isManager) params.append('role', 'Менеджер');
+            if (isCashier) params.append('role', 'Касир');
+            endpoint = `/employees/${params.toString() ? '?' + params.toString() : ''}`;
+            const dbEmployees = await apiFetch(endpoint);
+            mockEmployees = dbEmployees.map(e => ({
+                id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
                 role: e.empl_role, salary: e.salary, phone: e.phone_number
             }));
             renderEmployees(mockEmployees);
-
         } else if (pageType === 'store-products') {
-            // Логіка для товарів у магазині (UPC регістр)
             const promoVal = document.getElementById('filterPromoSelect').value;
             savedFilters['store-products'].promo = promoVal;
-            //змінив sort_by на name
             endpoint = `/store-products/?sort_by=name`;
             if (promoVal !== 'all') {
                 endpoint += `&promotional=${promoVal === 'yes' ? 'true' : 'false'}`;
             }
-
             const dbStoreProducts = await apiFetch(endpoint);
             mockStoreProducts = dbStoreProducts.map(sp => ({
-                upc: sp.upc || sp.UPC,
-                id_product: sp.id_product,
-                selling_price: parseFloat(sp.selling_price),
-                products_number: sp.products_number,
-                promotional_product: sp.promotional_product
+                upc: sp.upc || sp.UPC, id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
+                products_number: sp.products_number, promotional_product: sp.promotional_product,
+                product_name: sp.product_name // з БД
             }));
             renderStoreProducts(mockStoreProducts);
         } else if (pageType === 'checks') {
@@ -1451,26 +1416,24 @@ window.applyFilters = async () => {
             savedFilters['checks'].cashier = cashierVal;
             savedFilters['checks'].start = startVal;
             savedFilters['checks'].end = endVal;
-
-            let params = [];
-            if (cashierVal !== 'all') params.push(`id_employee=${encodeURIComponent(cashierVal)}`);
-            if (startVal) params.push(`start_date=${encodeURIComponent(startVal)}`);
-            if (endVal) params.push(`end_date=${encodeURIComponent(endVal)}`);
-            endpoint = `/checks/${params.length ? '?' + params.join('&') : ''}`;
-
+            const params = new URLSearchParams();
+            if (cashierVal !== 'all') params.append('id_employee', cashierVal);
+            if (startVal) params.append('start_date', startVal);
+            if (endVal) params.append('end_date', endVal);
+            endpoint = `/checks/${params.toString() ? '?' + params.toString() : ''}`;
             const dbChecks = await apiFetch(endpoint);
             mockChecks = dbChecks.map(c => ({
                 check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
                 print_date: new Date(c.print_date).toLocaleString('uk-UA'),
-                sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat)
+                sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat),
+                cashier_name: c.cashier_name // з БД
             }));
             renderChecks(mockChecks);
         }
-
         bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
         showBeautifulAlert('Фільтри застосовано!', 'success');
-
     } catch (error) {
+        console.error(error);
         showBeautifulAlert('Помилка фільтрації', 'danger');
     }
 };
