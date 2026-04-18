@@ -797,6 +797,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    const payBtn = document.getElementById('posPayBtn');
+    if (payBtn) {
+        payBtn.addEventListener('click', async () => {
+            if (currentReceipt.length === 0) return;
+
+            // Блокуємо кнопку від подвійного кліку
+            payBtn.disabled = true;
+            const originalText = payBtn.innerHTML;
+            payBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Обробка...';
+
+            // Генеруємо випадковий 10-значний номер чеку (або можна перенести це на бекенд)
+            const checkNumber = Math.random().toString().slice(2, 12).padStart(10, '0');
+
+            // Формуємо дані для API
+            const data = {
+                check_number: checkNumber,
+                card_number: appliedCustomer ? appliedCustomer.card_number : null,
+                items: currentReceipt.map(item => ({ UPC: item.upc, product_number: item.quantity }))
+            };
+
+            const res = await apiMutate('/checks/', 'POST', data);
+
+            if (res.success) {
+                showBeautifulAlert(`Чек #${checkNumber} успішно створено!`, 'success');
+                // Очищаємо касу
+                currentReceipt = [];
+                appliedCustomer = null;
+                document.getElementById('posCardInput').value = '';
+                document.getElementById('posCardResult').textContent = '';
+                renderPosTable();
+                calculatePosTotals();
+                // Оновлюємо залишки в пам'яті
+                await loadStoreProducts();
+            }
+
+            payBtn.disabled = false;
+            payBtn.innerHTML = originalText;
+        });
+    }
+
     // Вибір ролі працівника
     const roleBtns = document.querySelectorAll('.btn-role-select');
     roleBtns.forEach(btn => {
