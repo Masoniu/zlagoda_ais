@@ -509,6 +509,8 @@ body.cashier-mode .cashier-hide-col {
 }
 
 .toast.bg-success {
-  background-color: var(--primary-color) !important;
-  border: 1px solid var(--secondary-color) !important;
+  background-color: #e7eeb9 !important;
+  border: 2px solid var(--secondary-color) !important;
+  box-shadow: 0 10px 25px rgba(55, 31, 38, 0.2) !important;
+  color: var(--primary-color) !important;
 }
