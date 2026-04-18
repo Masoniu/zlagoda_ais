@@ -575,6 +575,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const res = await fetch('../shared/modals.html');
             modalsPlaceholder.innerHTML = await res.text();
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr("#filterCheckStart, #filterCheckEnd", {
+                    enableTime: true,          
+                    dateFormat: "d.m.Y H:i",   
+                    time_24hr: true,    
+                    locale: "uk"         
+                });
+            }
         } catch (error) { console.error("Помилка завантаження модалок:", error); }
     }
 
