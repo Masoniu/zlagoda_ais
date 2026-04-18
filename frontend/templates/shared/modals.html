@@ -321,3 +321,31 @@
     </div>
   </div>
 </div>
+
+<!--delete check confirm-->
+<div class="modal fade" id="deleteCheckConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-body text-center p-4">
+        <div class="mb-3">
+          <i class="bi bi-receipt icon-zlagoda fs-1"></i>
+        </div>
+        <h5 class="fw-bold mb-3">Видалення чеку</h5>
+        <p class="text-muted small mb-4">
+          Ви бажаєте просто видалити запис про чек з бази, чи скасувати покупку та повернути товари на полицю (збільшити залишки в магазині)?
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <button type="button" class="btn btn_sale text-white w-100 rounded-3 py-2 fw-bold" id="btnDeleteAndReturn">
+            Видалити чек ТА повернути товари
+          </button>
+          <button type="button" class="btn btn_delete w-100 rounded-3 py-2" id="btnDeleteOnly">
+            Просто видалити чек
+          </button>
+          <button type="button" class="btn btn-light w-100 rounded-3 py-2 mt-2" data-bs-dismiss="modal">
+            Скасувати
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
