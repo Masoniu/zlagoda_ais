@@ -4,6 +4,7 @@ from typing import Optional
 class ProductBase(BaseModel):
     category_number: int
     product_name: str
+    manufacturer: str
     characteristics: str
 
 class ProductCreate(ProductBase):
