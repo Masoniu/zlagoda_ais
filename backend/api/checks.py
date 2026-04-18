@@ -119,23 +119,30 @@ async def get_checks(
         conn: asyncpg.Connection = Depends(get_db_conn),
         current_user: dict = Depends(get_current_user)
 ):
-    query = 'SELECT * FROM "check" WHERE 1=1'
+    query = """
+            SELECT c.*,
+                   e.empl_surname || ' ' || SUBSTRING(e.empl_name, 1, 1) || '.' AS cashier_name
+            FROM "check" c
+                     JOIN employee e ON c.id_employee = e.id_employee
+            WHERE 1 = 1 \
+            """
     args = []
+
     if current_user["empl_role"] == "Касир":
         args.append(current_user["id_employee"])
-        query += f' AND id_employee = ${len(args)}'
+        query += f' AND c.id_employee = ${len(args)}'
     elif id_employee:
         args.append(id_employee)
-        query += f' AND id_employee = ${len(args)}'
+        query += f' AND c.id_employee = ${len(args)}'
 
     if start_date:
         args.append(start_date)
-        query += f' AND print_date >= ${len(args)}'
+        query += f' AND c.print_date >= ${len(args)}'
     if end_date:
         args.append(end_date)
-        query += f' AND print_date <= ${len(args)}'
+        query += f' AND c.print_date <= ${len(args)}'
 
-    query += ' ORDER BY print_date DESC'
+    query += ' ORDER BY c.print_date DESC'
 
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
