@@ -1189,9 +1189,11 @@ window.applyFilters = async () => {
             // Логіка для товарів у магазині (UPC регістр)
             const promoVal = document.getElementById('filterPromoSelect').value;
             savedFilters['store-products'].promo = promoVal;
-
-            endpoint = `/store-products/?sort_by=quantity`;
-            if (promoVal !== 'all') endpoint += `&promotional=${promoVal === 'yes' ? 'true' : 'false'}`;
+            //змінив sort_by на name
+            endpoint = `/store-products/?sort_by=name`;
+            if (promoVal !== 'all') {
+                endpoint += `&promotional=${promoVal === 'yes' ? 'true' : 'false'}`;
+            }
 
             const dbStoreProducts = await apiFetch(endpoint);
             mockStoreProducts = dbStoreProducts.map(sp => ({
