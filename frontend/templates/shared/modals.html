@@ -176,17 +176,19 @@
             <div class="flex-fill">
               <label class="form-label small text-muted">З</label>
               <input
-                type="datetime-local"
+                type="text"
                 class="form-control auth-input"
                 id="filterCheckStart"
+                placeholder="Оберіть дату та час"
               />
             </div>
             <div class="flex-fill">
               <label class="form-label small text-muted">По</label>
               <input
-                type="datetime-local"
+                type="text"
                 class="form-control auth-input"
                 id="filterCheckEnd"
+                placeholder="Оберіть дату та час"
               />
             </div>
           </div>
@@ -226,58 +228,53 @@
   </div>
 </div>
 
-    <!--WINDOW FOR VIEWING EMPLOYEE DETAILS-->
-<div
-      class="modal fade"
-      id="viewEmployeeModal"
-      tabindex="-1"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow-lg">
-          <div class="modal-header border-0 rounded-top-4" id="v-header">
-            <h5 class="modal-title fw-bold">Досьє працівника</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
+<!--WINDOW FOR VIEWING EMPLOYEE DETAILS-->
+<div class="modal fade" id="viewEmployeeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-0 rounded-top-4" id="v-header">
+        <h5 class="modal-title fw-bold">Досьє працівника</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="text-center mb-4">
+          <div class="display-1">
+            <i class="bi bi-person-vcard icon_zlagoda"></i>
           </div>
-          <div class="modal-body p-4">
-            <div class="text-center mb-4">
-              <div class="display-1">
-                <i class="bi bi-person-vcard icon_zlagoda"></i>
-              </div>
-              <div id="v-id" class="text-muted small mb-2"></div>
-              <h4 id="v-fullName" class="fw-bold mb-1"></h4>
-              <span id="v-role" class="badge-empl"></span>
-            </div>
-            <div class="row g-3">
-              <div class="col-6">
-                <p class="small text-muted mb-0">Телефон</p>
-                <p id="v-phone" class="fw-semibold"></p>
-              </div>
-              <div class="col-6">
-                <p class="small text-muted mb-0">Зарплата</p>
-                <p id="v-salary" class="fw-semibold"></p>
-              </div>
-              <div class="col-6">
-                <p class="small text-muted mb-0">Дата народження</p>
-                <p id="v-birth" class="fw-semibold"></p>
-              </div>
-              <div class="col-6">
-                <p class="small text-muted mb-0">Працює з</p>
-                <p id="v-start" class="fw-semibold"></p>
-              </div>
-              <div class="col-12 border-top pt-2">
-                <p class="small text-muted mb-0">Адреса</p>
-                <p id="v-address" class="fw-semibold"></p>
-              </div>
-            </div>
+          <div id="v-id" class="text-muted small mb-2"></div>
+          <h4 id="v-fullName" class="fw-bold mb-1"></h4>
+          <span id="v-role" class="badge-empl"></span>
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <p class="small text-muted mb-0">Телефон</p>
+            <p id="v-phone" class="fw-semibold"></p>
+          </div>
+          <div class="col-6">
+            <p class="small text-muted mb-0">Зарплата</p>
+            <p id="v-salary" class="fw-semibold"></p>
+          </div>
+          <div class="col-6">
+            <p class="small text-muted mb-0">Дата народження</p>
+            <p id="v-birth" class="fw-semibold"></p>
+          </div>
+          <div class="col-6">
+            <p class="small text-muted mb-0">Працює з</p>
+            <p id="v-start" class="fw-semibold"></p>
+          </div>
+          <div class="col-12 border-top pt-2">
+            <p class="small text-muted mb-0">Адреса</p>
+            <p id="v-address" class="fw-semibold"></p>
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
 <!--print-->
 <div
@@ -323,7 +320,12 @@
 </div>
 
 <!--delete check confirm-->
-<div class="modal fade" id="deleteCheckConfirmModal" tabindex="-1" aria-hidden="true">
+<div
+  class="modal fade"
+  id="deleteCheckConfirmModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 rounded-4 shadow">
       <div class="modal-body text-center p-4">
@@ -332,16 +334,29 @@
         </div>
         <h5 class="fw-bold mb-3">Видалення чеку</h5>
         <p class="text-muted small mb-4">
-          Ви бажаєте просто видалити запис про чек з бази, чи скасувати покупку та повернути товари на полицю (збільшити залишки в магазині)?
+          Ви бажаєте просто видалити запис про чек з бази, чи скасувати покупку
+          та повернути товари на полицю (збільшити залишки в магазині)?
         </p>
         <div class="d-flex flex-column gap-2">
-          <button type="button" class="btn btn_sale text-white w-100 rounded-3 py-2 fw-bold" id="btnDeleteAndReturn">
+          <button
+            type="button"
+            class="btn btn_sale text-white w-100 rounded-3 py-2 fw-bold"
+            id="btnDeleteAndReturn"
+          >
             Видалити чек ТА повернути товари
           </button>
-          <button type="button" class="btn btn_delete w-100 rounded-3 py-2" id="btnDeleteOnly">
+          <button
+            type="button"
+            class="btn btn_delete w-100 rounded-3 py-2"
+            id="btnDeleteOnly"
+          >
             Просто видалити чек
           </button>
-          <button type="button" class="btn btn-light w-100 rounded-3 py-2 mt-2" data-bs-dismiss="modal">
+          <button
+            type="button"
+            class="btn btn-light w-100 rounded-3 py-2 mt-2"
+            data-bs-dismiss="modal"
+          >
             Скасувати
           </button>
         </div>
