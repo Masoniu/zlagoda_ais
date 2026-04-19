@@ -87,7 +87,11 @@ async function apiMutate(endpoint, method, data = null) {
             let errorMessage = 'Помилка сервера';
             try {
                 const err = await response.json();
-                errorMessage = err.detail || err.message || errorMessage;
+                if (Array.isArray(err.detail)) {
+                    errorMessage = err.detail.map(e => `Поле ${e.loc[e.loc.length - 1]}: ${e.msg}`).join(' | ');
+                } else {
+                    errorMessage = err.detail || err.message || errorMessage;
+                }
             } catch (e) {
                 errorMessage = `Помилка сервера (${response.status})`;
             }

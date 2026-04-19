@@ -26,11 +26,20 @@ class EmployeeBase(BaseModel):
         return v
 
 class EmployeeCreate(EmployeeBase):
-    id_employee: str = Field(..., max_length=10)
     password: str = Field(..., min_length=4)
 
-class EmployeeUpdate(EmployeeBase):
-    pass
+class EmployeeUpdate(BaseModel):
+    empl_surname: Optional[str] = Field(None, max_length=50)
+    empl_name: Optional[str] = Field(None, max_length=50)
+    empl_patronymic: Optional[str] = Field(None, max_length=50)
+    empl_role: Optional[str] = Field(None, max_length=50)
+    salary: Optional[Decimal] = Field(None, ge=0)
+    date_of_start: Optional[date] = None
+    date_of_birth: Optional[date] = None
+    phone_number: Optional[str] = Field(None, max_length=13)
+    city: Optional[str] = Field(None, max_length=50)
+    street: Optional[str] = Field(None, max_length=50)
+    zip_code: Optional[str] = Field(None, max_length=9)
 
 class EmployeeResponse(EmployeeBase):
     id_employee: str
