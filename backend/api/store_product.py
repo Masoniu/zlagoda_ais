@@ -95,10 +95,6 @@ async def create_store_product(
     if not prod_check:
         raise HTTPException(status_code=400, detail="Товар з таким ID не знайдено в каталозі")
 
-    upc_check = await conn.fetchval("SELECT 1 FROM store_product WHERE upc = $1", item.UPC)
-    if upc_check:
-        raise HTTPException(status_code=400, detail="Товар з таким UPC вже існує")
-
     if item.promotional_product:
         if not item.upc_prom:
             raise HTTPException(status_code=400,
@@ -107,29 +103,51 @@ async def create_store_product(
     else:
         item.upc_prom = None
 
+    existing_sp = await conn.fetchrow("SELECT id_product, products_number FROM store_product WHERE upc = $1", item.UPC)
+
     try:
-        await conn.execute("""
-            INSERT INTO store_product (upc, upc_prom, id_product, selling_price, products_number, promotional_product)
-            VALUES ($1, $2, $3, $4, $5, $6) 
-        """, item.UPC, item.upc_prom, item.id_product, item.selling_price,
-                           item.products_number, item.promotional_product)
+        async with conn.transaction():
+            if existing_sp:
+                if existing_sp["id_product"] != item.id_product:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Помилка: Цей UPC вже закріплений за іншим товаром з каталогу! Перевірте правильність штрихкоду або обраного товару."
+                    )
+                new_qty = existing_sp["products_number"] + item.products_number
 
-        # Дістаємо запис разом з product_name
-        new_sp = await conn.fetchrow("""
-            SELECT sp.upc AS "UPC", sp.upc_prom AS "UPC_prom", sp.id_product,
-                   sp.selling_price, sp.products_number, sp.promotional_product, p.product_name 
-            FROM store_product sp
-            JOIN product p ON sp.id_product = p.id_product
-            WHERE sp.upc = $1
-        """, item.UPC)
+                await conn.execute("""
+                    UPDATE store_product
+                    SET selling_price = $1, products_number = $2
+                    WHERE upc = $3
+                """, item.selling_price, new_qty, item.UPC)
+            else:
+                await conn.execute("""
+                    INSERT INTO store_product (upc, upc_prom, id_product, selling_price, products_number, promotional_product)
+                    VALUES ($1, $2, $3, $4, $5, $6) 
+                """, item.UPC, item.upc_prom, item.id_product, item.selling_price,
+                                   item.products_number, item.promotional_product)
 
-        return dict(new_sp)
+            if not item.promotional_product:
+                await conn.execute("""
+                    UPDATE store_product
+                    SET selling_price = ROUND($1 * 0.8, 4)
+                    WHERE upc_prom = $2 AND promotional_product = TRUE
+                """, item.selling_price, item.UPC)
+
+            result_sp = await conn.fetchrow("""
+                SELECT sp.upc AS "UPC", sp.upc_prom AS "UPC_prom", sp.id_product,
+                       sp.selling_price, sp.products_number, sp.promotional_product, p.product_name 
+                FROM store_product sp
+                JOIN product p ON sp.id_product = p.id_product
+                WHERE sp.upc = $1
+            """, item.UPC)
+
+        return dict(result_sp)
     except asyncpg.exceptions.UniqueViolationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Товар з таким UPC вже існує"
+            detail="Помилка унікальності даних."
         )
-
 
 @router.put("/{upc}", response_model=StoreProductResponse)
 async def update_store_product(
@@ -185,19 +203,25 @@ async def update_store_product(
         update_values.append(upc)
         query = f"UPDATE store_product SET {', '.join(update_fields)} WHERE upc = ${len(update_values)}"
 
-        await conn.execute(query, *update_values)
+        async with conn.transaction():
+            await conn.execute(query, *update_values)
 
-        # Витягуємо оновлений запис разом з product_name
-        updated_sp = await conn.fetchrow("""
-            SELECT sp.upc AS "UPC", sp.upc_prom AS "UPC_prom", sp.id_product,
-                   sp.selling_price, sp.products_number, sp.promotional_product, p.product_name 
-            FROM store_product sp
-            JOIN product p ON sp.id_product = p.id_product
-            WHERE sp.upc = $1
-        """, upc)
+            updated_sp = await conn.fetchrow("""
+                SELECT sp.upc AS "UPC", sp.upc_prom AS "UPC_prom", sp.id_product,
+                       sp.selling_price, sp.products_number, sp.promotional_product, p.product_name 
+                FROM store_product sp
+                JOIN product p ON sp.id_product = p.id_product
+                WHERE sp.upc = $1
+            """, upc)
 
-        if not updated_sp:
-            raise HTTPException(status_code=404, detail="Товар в магазині не знайдено")
+            if not updated_sp:
+                raise HTTPException(status_code=404, detail="Товар в магазині не знайдено")
+            if not updated_sp["promotional_product"]:
+                await conn.execute("""
+                    UPDATE store_product
+                    SET selling_price = ROUND($1 * 0.8, 4)
+                    WHERE upc_prom = $2 AND promotional_product = TRUE
+                """, updated_sp["selling_price"], upc)
 
         return dict(updated_sp)
     except asyncpg.exceptions.UniqueViolationError:
