@@ -52,7 +52,9 @@
           </button>
           <button
             class="btn btn-outline-secondary btn_printer fw-bold px-4 py-2 shadow-sm rounded-3 bg-white"
-            onclick="generateReport('Персонал магазину', 'employeeTableBody')"
+            onclick="
+              generateReport('Товари в магазині', 'storeProductTableBody')
+            "
           >
             <i class="bi bi-printer me-2"></i>Друк звіту
           </button>
@@ -66,16 +68,20 @@
             <thead class="zlagoda_table_header">
               <tr>
                 <th class="ps-4">UPC</th>
-                <th class="sortable-header" onclick="handleSort('storeProducts', 'name')">
-                    Назва товару
-                    <i class="bi bi-arrow-down-up small text-muted ms-1">
-                    </i>
+                <th
+                  class="sortable-header"
+                  onclick="handleSort('storeProducts', 'name')"
+                >
+                  Назва товару
+                  <i class="bi bi-arrow-down-up small text-muted ms-1"> </i>
                 </th>
                 <th>Ціна</th>
-                <th class="sortable-header" onclick="handleSort('storeProducts', 'quantity')">
-                    Кількість
-                    <i class="bi bi-arrow-down-up small text-muted ms-1">
-                    </i>
+                <th
+                  class="sortable-header"
+                  onclick="handleSort('storeProducts', 'quantity')"
+                >
+                  Кількість
+                  <i class="bi bi-arrow-down-up small text-muted ms-1"> </i>
                 </th>
                 <th>Акція</th>
                 <th class="text-end pe-4 cashier-hide-col">Дії</th>
