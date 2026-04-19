@@ -184,6 +184,8 @@ function setupEmployeeForm() {
             street: document.getElementById('emplStreetInput').value.trim(),
             zip_code: document.getElementById('emplZipInput').value.trim()
         };
+        const passVal = document.getElementById('emplPasswordInput').value;
+        if (passVal) data.password = passVal;
         submitBtn.disabled = true;
         let res;
         if (editId) {
@@ -820,6 +822,66 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             renderCustomers(mappedData);
             showBeautifulAlert('Фільтр застосовано: клієнти, що купили всі акції', 'success');
+        });
+    }
+
+    const viewCustomerModal = document.getElementById('viewCustomerModal');
+    if (viewCustomerModal) {
+        viewCustomerModal.addEventListener('hidden.bs.modal', () => {
+            const listEl = document.getElementById('v-cust-history-list');
+            if (listEl) {
+                listEl.innerHTML = '';
+            }
+        });
+    }
+
+    const btnCustHistory = document.getElementById('btnCustHistory');
+    if (btnCustHistory) {
+        btnCustHistory.addEventListener('click', async () => {
+            const cardNumText = document.getElementById('v-cust-id').textContent;
+            const cardNum = cardNumText.replace('Номер карти: ', '').replace('ID: ', '').trim();
+
+            const listEl = document.getElementById('v-cust-history-list');
+            listEl.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm text-zlagoda"></div></div>';
+
+            try {
+                const data = await apiFetch(`/customer-cards/${cardNum}/reports/history`);
+
+                if(data.length === 0) {
+                    listEl.innerHTML = '<div class="text-muted text-center py-2">Клієнт ще нічого не купував</div>';
+                    return;
+                }
+
+                listEl.innerHTML = data.map(item => `
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 px-1">
+                        <span class="fw-semibold text-dark">${item.product_name}</span>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill">
+                            ${item.total_quantity} шт.
+                        </span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                listEl.innerHTML = '<div class="text-danger small">Помилка завантаження</div>';
+            }
+        });
+    }
+
+    const btnBestsellers = document.getElementById('btnBestsellers');
+    if (btnBestsellers) {
+        btnBestsellers.addEventListener('click', async () => {
+            try {
+                const dbProducts = await apiFetch('/products/reports/bestsellers');
+
+                if(dbProducts.length === 0) {
+                    return showBeautifulAlert('Немає товарів, які продавав абсолютно кожен касир', 'warning');
+                }
+
+                renderProducts(dbProducts);
+                showBeautifulAlert('Показано абсолютні бестселери!', 'success');
+
+            } catch (error) {
+                console.error("Помилка завантаження бестселерів:", error);
+            }
         });
     }
 });

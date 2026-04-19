@@ -40,6 +40,7 @@ class EmployeeUpdate(BaseModel):
     city: Optional[str] = Field(None, max_length=50)
     street: Optional[str] = Field(None, max_length=50)
     zip_code: Optional[str] = Field(None, max_length=9)
+    password: Optional[str] = Field(None, min_length=4)
 
 class EmployeeResponse(EmployeeBase):
     id_employee: str

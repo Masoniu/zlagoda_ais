@@ -171,3 +171,21 @@ async def get_top_promo_customers(
     """
     rows = await conn.fetch(query)
     return [dict(r) for r in rows]
+
+@router.get("/{card_number}/reports/history")
+async def get_customer_history(
+        card_number: str,
+        conn: asyncpg.Connection = Depends(get_db_conn)
+):
+    query = """
+        SELECT p.product_name, SUM(s.product_number) AS total_quantity
+        FROM product p
+        JOIN store_product sp ON p.id_product = sp.id_product
+        JOIN sale s ON sp.upc = s.upc
+        JOIN "check" ch ON s.check_number = ch.check_number
+        WHERE ch.card_number = $1
+        GROUP BY p.product_name
+        ORDER BY total_quantity DESC
+    """
+    result = await conn.fetch(query, card_number)
+    return [dict(r) for r in result]
