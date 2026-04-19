@@ -47,16 +47,6 @@ function debounce(func, timeout = 300) {
     };
 }
 
-function escHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
 async function apiFetch(endpoint) {
     const token = sessionStorage.getItem('token');
     if (!token) return [];
@@ -346,19 +336,8 @@ function renderStoreProducts(data) {
 function renderChecks(data) {
     const tableBody = document.getElementById('checkTableBody');
     if (!tableBody) return;
-    const totalSum = data.reduce((sum, chk) => sum + chk.sum_total, 0);
-    const sumElement = document.getElementById('totalChecksSum');
-    if (sumElement) sumElement.textContent = totalSum.toFixed(2);
-
-    const userRole = sessionStorage.getItem('userRole');
-
     tableBody.innerHTML = data.map(chk => {
         const cashierName = chk.cashier_name || "Невідомий";
-
-        const deleteBtnHtml = userRole === 'Менеджер'
-            ? `<button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')">Видалити</button>`
-            : '';
-
         return `
             <tr>
                 <td class="ps-4">#${chk.check_number}</td>
@@ -370,7 +349,7 @@ function renderChecks(data) {
                     <button class="btn btn-sm p-1 me-2" onclick="viewCheckDetails('${chk.check_number}')" title="Деталі чека">
                         <i class="bi bi-receipt icon-zlagoda fs-5"></i>
                     </button>
-                    ${deleteBtnHtml}
+                    <button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')">Видалити</button>
                 </td>
             </tr>`;
     }).join('');
@@ -457,39 +436,37 @@ function renderPosTable() {
 function populatePosDatalists() {
     const upcList = document.getElementById('posUpcList');
     if (upcList) {
-        upcList.innerHTML = mockStoreProducts.map(sp =>
-            `<option value="${escHtml(sp.upc)}">${escHtml(sp.product_name)} (Ціна: ${sp.selling_price} грн, Залишок: ${sp.products_number} шт)</option>`
-        ).join('');
+        upcList.innerHTML = '';
+        mockStoreProducts.forEach(sp => {
+            const name = sp.product_name || 'Невідомий товар';
+            upcList.innerHTML += `<option value="${sp.upc}">${name} (Ціна: ${sp.selling_price} грн, Залишок: ${sp.products_number} шт)</option>`;
+        });
     }
-
     const cardList = document.getElementById('posCardList');
     if (cardList) {
-        cardList.innerHTML = mockCustomers.map(c =>
-            `<option value="${escHtml(c.card_number)}">${escHtml(c.surname)} ${escHtml(c.name[0])}. (Знижка: ${c.percent}%, Тел: ${escHtml(c.phone)})</option>`
-        ).join('');
+        cardList.innerHTML = '';
+        mockCustomers.forEach(c => {
+            cardList.innerHTML += `<option value="${c.card_number}">${c.surname} ${c.name[0]}. (Знижка: ${c.percent}%, Тел: ${c.phone})</option>`;
+        });
     }
 }
 
 function populateCategoryDropdown() {
     const select = document.getElementById('categorySelectInput');
     if (!select) return;
-    const defaultOption = '<option value="" selected disabled>Оберіть категорію...</option>';
-    const options = mockCategories.map(cat =>
-        `<option value="${escHtml(cat.category_number)}">${escHtml(cat.category_name)}</option>`
-    ).join('');
-
-    select.innerHTML = defaultOption + options;
+    select.innerHTML = '<option value="" selected disabled>Оберіть категорію...</option>';
+    mockCategories.forEach(cat => {
+        select.innerHTML += `<option value="${cat.category_number}">${cat.category_name}</option>`;
+    });
 }
 
 function populateProductDropdown() {
     const select = document.getElementById('spProductSelect');
     if (!select) return;
-    const defaultOption = '<option value="" selected disabled>Оберіть товар з довідника...</option>';
-    const options = mockProducts.map(prod =>
-        `<option value="${escHtml(prod.id)}">${escHtml(prod.name)} (${escHtml(prod.manufacturer) || 'Без виробника'})</option>`
-    ).join('');
-
-    select.innerHTML = defaultOption + options;
+    select.innerHTML = '<option value="" selected disabled>Оберіть товар з довідника...</option>';
+    mockProducts.forEach(prod => {
+        select.innerHTML += `<option value="${prod.id}">${prod.name} (${prod.manufacturer || 'Без виробника'})</option>`;
+    });
 }
 
 function displayUserName() {
@@ -597,10 +574,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             modalsPlaceholder.innerHTML = await res.text();
             if (typeof flatpickr !== 'undefined') {
                 flatpickr("#filterCheckStart, #filterCheckEnd", {
-                    enableTime: true,          
-                    dateFormat: "d.m.Y H:i",   
-                    time_24hr: true,    
-                    locale: "uk"         
+                    enableTime: true,
+                    dateFormat: "d.m.Y H:i",
+                    time_24hr: true,
+                    locale: "uk"
                 });
             }
         } catch (error) { console.error("Помилка завантаження модалок:", error); }
@@ -852,46 +829,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
-    }
-
-    const payBtn = document.getElementById('posPayBtn');
-    if (payBtn) {
-        payBtn.addEventListener('click', async () => {
-            if (currentReceipt.length === 0) return;
-
-            // Блокуємо кнопку від подвійного кліку
-            payBtn.disabled = true;
-            const originalText = payBtn.innerHTML;
-            payBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Обробка...';
-
-            // Генеруємо випадковий 10-значний номер чеку (або можна перенести це на бекенд)
-            const checkNumber = Math.random().toString().slice(2, 12).padStart(10, '0');
-
-            // Формуємо дані для API
-            const data = {
-                check_number: checkNumber,
-                card_number: appliedCustomer ? appliedCustomer.card_number : null,
-                items: currentReceipt.map(item => ({ UPC: item.upc, product_number: item.quantity }))
-            };
-
-            const res = await apiMutate('/checks/', 'POST', data);
-
-            if (res.success) {
-                showBeautifulAlert(`Чек #${checkNumber} успішно створено!`, 'success');
-                // Очищаємо касу
-                currentReceipt = [];
-                appliedCustomer = null;
-                document.getElementById('posCardInput').value = '';
-                document.getElementById('posCardResult').textContent = '';
-                renderPosTable();
-                calculatePosTotals();
-                // Оновлюємо залишки в пам'яті
-                await loadStoreProducts();
-            }
-
-            payBtn.disabled = false;
-            payBtn.innerHTML = originalText;
-        });
     }
 
     // Вибір ролі працівника
