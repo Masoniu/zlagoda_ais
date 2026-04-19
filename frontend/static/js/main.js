@@ -357,7 +357,7 @@ function prepareEditCustomer(cardNumber) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('addCustomerModal')).show();
 }
 
-function viewCheckDetails(checkNumber) {
+window.viewCheckDetails = async (checkNumber) => {
     const chk = mockChecks.find(c => c.check_number === checkNumber);
     if (!chk) return;
     document.getElementById('v-check-id').textContent = `Чек #${chk.check_number}`;
@@ -378,16 +378,19 @@ function viewCheckDetails(checkNumber) {
     });
     const cardEl = document.getElementById('v-check-card');
     if (chk.card_number) {
+        if (mockCustomers.length === 0) {
+            await window.loadCustomers();
+        }
         const cust = mockCustomers.find(c => c.card_number === chk.card_number);
         cardEl.textContent = `Картка: ${chk.card_number} (Знижка ${cust ? cust.percent : 0}%)`;
         cardEl.style.display = 'inline-block';
     } else {
         cardEl.style.display = 'none';
     }
-    document.getElementById('v-check-vat').textContent = `${chk.vat.toFixed(2)} грн`;
-    document.getElementById('v-check-total').textContent = `${chk.sum_total.toFixed(2)} грн`;
+    document.getElementById('v-check-vat').textContent = chk.vat.toFixed(2);
+    document.getElementById('v-check-total').textContent = chk.sum_total.toFixed(2);
     bootstrap.Modal.getOrCreateInstance(document.getElementById('viewCheckModal')).show();
-}
+};
 
 window.viewEmployeeDetails = async (id) => {
     let empl = mockEmployees.find(e => e.id === id);
