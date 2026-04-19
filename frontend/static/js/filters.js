@@ -61,9 +61,14 @@ window.loadEmployees = async (query = '') => {
         }
         return;
     }
-    let url = `/employees/?sort_order=${currentSort.employees.order}`;
-    if (query) url += `&surname=${encodeURIComponent(query)}`;
-    const dbEmployees = await apiFetch(url);
+
+    const params = new URLSearchParams();
+    params.append('sort_order', currentSort.employees.order);
+    if (query) params.append('surname', query);
+    if (savedFilters.employees.manager) params.append('role', 'Менеджер');
+    if (savedFilters.employees.cashier) params.append('role', 'Касир');
+    const dbEmployees = await apiFetch(`/employees/?${params.toString()}`);
+
     if (Array.isArray(dbEmployees)) {
         mockEmployees = dbEmployees.map(e => ({
             id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
@@ -144,16 +149,8 @@ window.applyFilters = async () => {
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
                 return;
             }
-            const params = new URLSearchParams();
-            if (isManager) params.append('role', 'Менеджер');
-            if (isCashier) params.append('role', 'Касир');
-            endpoint = `/employees/${params.toString() ? '?' + params.toString() : ''}`;
-            const dbEmployees = await apiFetch(endpoint);
-            mockEmployees = dbEmployees.map(e => ({
-                id: e.id_employee, surname: e.empl_surname, name: e.empl_name, patronymic: e.empl_patronymic,
-                role: e.empl_role, salary: e.salary, phone: e.phone_number
-            }));
-            renderEmployees(mockEmployees);
+            const currentSearch = document.getElementById('employeeSearch')?.value.trim() || '';
+            await loadEmployees(currentSearch);
         } else if (pageType === 'store-products') {
             const promoVal = document.getElementById('filterPromoSelect').value;
             savedFilters['store-products'].promo = promoVal;
