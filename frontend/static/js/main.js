@@ -548,15 +548,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch('../shared/modals.html');
             modalsPlaceholder.innerHTML = await res.text();
             if (typeof flatpickr !== 'undefined') {
-                flatpickr("#filterCheckStart, #filterCheckEnd, #analyticsStartDate, #analyticsEndDate", {
-                    enableTime: true,
-                    dateFormat: "Y-m-dTH:i",
-                    altInput: true,
-                    altFormat: "d.m.Y H:i",
-                    time_24hr: true,
-                    locale: "uk"
-                });
-            }
+    flatpickr("#filterCheckStart, #filterCheckEnd, #analyticsStartDate, #analyticsEndDate", {
+        enableTime: true,
+        dateFormat: "Y-m-dTH:i",
+        altInput: true,
+        altFormat: "d.m.Y H:i",
+        time_24hr: true,
+        locale: "uk"
+    });
+    flatpickr("#emplBirthInput, #emplStartInput", {
+        enableTime: false,
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d.m.Y",
+        locale: "uk",
+        maxDate: "today"
+    });
+}
         } catch (error) { console.error(error); }
     }
     const navPlaceholder = document.getElementById('navbar_placeholder');
