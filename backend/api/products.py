@@ -11,7 +11,7 @@ router = APIRouter()
 # Тут current_user передаємо в dependencies, бо всередині він не використовується
 @router.get("/", response_model=List[ProductResponse], dependencies=[Depends(get_current_user)])
 async def get_products(
-        category_number: Optional[int] = Query(None, description="Фільтр за категорією"),
+        category_number: List[int] = Query(default=[], description="Фільтр за категорією"),
         name: Optional[str] = Query(None, description="Пошук за назвою товару"),
         sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
         conn: asyncpg.Connection = Depends(get_db_conn)
@@ -27,9 +27,10 @@ async def get_products(
         WHERE 1=1
     """
     args = []
-    if category_number is not None:
+    if category_number:
         args.append(category_number)
-        query += f" AND p.category_number = ${len(args)}"
+        query += f" AND p.category_number = ANY(${len(args)}::int[])"
+
     if name:
         args.append(f"%{name}%")
         query += f" AND p.product_name ILIKE ${len(args)}"

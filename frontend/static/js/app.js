@@ -1553,6 +1553,12 @@ window.applyFilters = async () => {
         if (pageType === 'products') {
             const checkedCats = Array.from(document.querySelectorAll('#filterCategoryList input:checked')).map(cb => cb.value);
             savedFilters['products'].categories = checkedCats;
+            if (checkedCats.length === 0) {
+                mockProducts = [];
+                renderProducts(mockProducts);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
+                return;
+            }
             const params = new URLSearchParams();
             checkedCats.forEach(id => params.append('category_number', id));
             endpoint = `/products/${params.toString() ? '?' + params.toString() : ''}`;
@@ -1578,6 +1584,12 @@ window.applyFilters = async () => {
             const isCashier = document.getElementById('fRoleCashier').checked;
             savedFilters['employees'].manager = isManager;
             savedFilters['employees'].cashier = isCashier;
+            if (!isManager && !isCashier) {
+                mockEmployees = [];
+                renderEmployees(mockEmployees);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
+                return;
+            }
             const params = new URLSearchParams();
             if (isManager) params.append('role', 'Менеджер');
             if (isCashier) params.append('role', 'Касир');
