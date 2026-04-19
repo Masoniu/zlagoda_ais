@@ -231,3 +231,24 @@ async def get_check_details(
     response = dict(check)
     response["items"] = [dict(item) for item in items]
     return response
+
+@router.get("/reports/category-revenue")
+async def get_category_revenue(
+    start_date: datetime,
+    end_date: datetime,
+    conn: asyncpg.Connection = Depends(get_db_conn),
+    current_user: dict = Depends(get_current_user)
+):
+    query = """
+        SELECT c.category_name, SUM(s.product_number) AS total_sold, SUM(s.selling_price * s.product_number) AS total_revenue
+        FROM category c
+        JOIN product p ON c.category_number = p.category_number
+        JOIN store_product sp ON p.id_product = sp.id_product
+        JOIN sale s ON sp.upc = s.upc
+        JOIN "check" ch ON s.check_number = ch.check_number
+        WHERE ch.print_date >= $1 AND ch.print_date <= $2
+        GROUP BY c.category_name
+        ORDER BY total_revenue DESC
+    """
+    rows = await conn.fetch(query, start_date, end_date)
+    return [dict(r) for r in rows]

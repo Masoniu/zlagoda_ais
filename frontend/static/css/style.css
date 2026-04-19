@@ -466,13 +466,7 @@ body.cashier-mode .cashier-hide-col {
 }
 
 .btn-filter-ghost:hover {
-  color: var(--primary-color);
-  background-color: rgba(125, 139, 56, 0.1);
-  transform: scale(1.1);
-}
-
-.btn-filter-ghost:active {
-  transform: scale(0.9);
+  transform: scale(1.15);
 }
 
 .form-check-input.zlagoda-checkbox:checked {
@@ -551,4 +545,32 @@ body.cashier-mode .cashier-hide-col {
 .nav-item:hover .nav-link {
   text-decoration: none !important;
   color: var(--text-color) !important;
+}
+
+.btn_star {
+  background: transparent !important;
+  color: var(--text-color) !important;
+  border: none !important;
+  font-size: 1.5rem;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.btn_star:hover {
+  transform: scale(1.15);
+}
+
+.analytics_btn {
+  background: transparent !important;
+  color: var(--text-color) !important;
+  border: none !important;
+  font-size: 1.5rem;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.analytics_btn:hover {
+  transform: scale(1.15);
 }

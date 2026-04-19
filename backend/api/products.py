@@ -168,3 +168,23 @@ async def delete_product(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Неможливо видалити цей товар з каталогу, оскільки він зараз знаходиться у списку 'Товари в магазині'."
         )
+    
+@router.get("/reports/bestsellers")
+async def get_bestsellers(
+        conn: asyncpg.Connection = Depends(get_db_conn)
+):
+    query = """
+        SELECT p.id_product, p.product_name, p.manufacturer, p.characteristics, p.category_number
+        FROM product p
+        WHERE NOT EXISTS (
+            SELECT e.id_employee FROM employee e WHERE e.empl_role = 'Касир'
+            AND NOT EXISTS (
+                SELECT s.upc FROM sale s
+                JOIN "check" ch ON s.check_number = ch.check_number
+                JOIN store_product sp ON s.upc = sp.upc
+                WHERE ch.id_employee = e.id_employee AND sp.id_product = p.id_product
+            )
+        )
+    """
+    result = await conn.fetch(query)
+    return [dict(r) for r in result]
