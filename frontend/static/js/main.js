@@ -370,8 +370,8 @@ function viewCheckDetails(checkNumber) {
                 <tr>
                     <td class="fw-semibold">${sale.product_name} <br><span class="text-muted small">UPC: ${sale.upc}</span></td>
                     <td>${sale.quantity} шт.</td>
-                    <td>${sale.selling_price.toFixed(2)}</td>
-                    <td class="text-end fw-bold">${(sale.quantity * sale.selling_price).toFixed(2)}</td>
+                    <td>${sale.selling_price.toFixed(2)} грн</td>
+                    <td class="text-end fw-bold">${(sale.quantity * sale.selling_price).toFixed(2)} грн</td>
                 </tr>
             `).join('');
         }
@@ -384,8 +384,8 @@ function viewCheckDetails(checkNumber) {
     } else {
         cardEl.style.display = 'none';
     }
-    document.getElementById('v-check-vat').textContent = chk.vat.toFixed(2);
-    document.getElementById('v-check-total').textContent = chk.sum_total.toFixed(2);
+    document.getElementById('v-check-vat').textContent = `${chk.vat.toFixed(2)} грн`;
+    document.getElementById('v-check-total').textContent = `${chk.sum_total.toFixed(2)} грн`;
     bootstrap.Modal.getOrCreateInstance(document.getElementById('viewCheckModal')).show();
 }
 
