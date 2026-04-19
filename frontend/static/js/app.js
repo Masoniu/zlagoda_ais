@@ -575,7 +575,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (typeof flatpickr !== 'undefined') {
                 flatpickr("#filterCheckStart, #filterCheckEnd", {
                     enableTime: true,
-                    dateFormat: "d.m.Y H:i",
+                    dateFormat: "Y-m-dTH:i", // Формат для бекенду (ISO)
+                    altInput: true,          // Створює окреме поле для користувача
+                    altFormat: "d.m.Y H:i",  // Красивий формат, який бачить юзер
                     time_24hr: true,
                     locale: "uk"
                 });
