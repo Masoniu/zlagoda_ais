@@ -21,7 +21,7 @@ async def calculate_promo_price(conn: asyncpg.Connection, upc_prom: str) -> Deci
 # Видалено unused variable, винесено в dependencies
 @router.get("/", response_model=List[StoreProductResponse], dependencies=[Depends(get_current_user)])
 async def get_all_store_products(
-        upc: Optional[str] = Query(None, description="Пошук за UPC"),
+        search: Optional[str] = Query(None, description="Пошук за UPC"),
         promotional: Optional[bool] = Query(None, description="True - акційні, False - неакційні, None - всі"),
         sort_by: Optional[str] = Query("name", description="Сортування: 'name' або 'quantity'"),
         sort_order: Optional[str] = Query("asc", description="Сортування (asc/desc)"),
@@ -40,9 +40,11 @@ async def get_all_store_products(
             WHERE 1 = 1 
             """
     args = []
-    if upc:
-        args.append(f"%{upc}%")
-        query += f" AND sp.upc ILIKE ${len(args)}"
+    
+    if search:
+        args.append(f"%{search}%")
+        query += f" AND (sp.upc ILIKE ${len(args)} OR p.product_name ILIKE ${len(args)})"
+
     if promotional is not None:
         args.append(promotional)
         query += f" AND sp.promotional_product = ${len(args)}"

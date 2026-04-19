@@ -34,7 +34,7 @@ window.loadStoreProducts = async (query = '') => {
     const params = new URLSearchParams();
     params.append('sort_by', currentSort.storeProducts.by);
     params.append('sort_order', currentSort.storeProducts.order);
-    if (query) params.append('upc', query);
+    if (query) params.append('search', query);
     const promoFilter = savedFilters['store-products'].promo;
     if (promoFilter !== 'all') {
         params.append('promotional', promoFilter === 'yes' ? 'true' : 'false');
