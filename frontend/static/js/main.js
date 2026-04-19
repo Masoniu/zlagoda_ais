@@ -412,7 +412,7 @@ window.viewEmployeeDetails = async (id) => {
     document.getElementById('v-id').textContent = `Табельний номер: #${empl.id}`;
     document.getElementById('v-fullName').textContent = `${empl.surname} ${empl.name} ${empl.patronymic || ''}`;
     document.getElementById('v-phone').textContent = empl.phone;
-    document.getElementById('v-salary').textContent = `${empl.salary} грн`;
+    document.getElementById('v-salary').textContent = `${parseFloat(empl.salary).toFixed(2)} грн`;
     document.getElementById('v-birth').textContent = empl.birth_date;
     document.getElementById('v-start').textContent = empl.start_date;
     document.getElementById('v-address').textContent = `${empl.zip || ''}, м. ${empl.city || ''}, ${empl.street || ''}`;
