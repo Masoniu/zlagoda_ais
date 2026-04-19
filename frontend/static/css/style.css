@@ -401,7 +401,8 @@ body.loaded {
 
 body.cashier-mode .btn_edit,
 body.cashier-mode .btn_delete,
-body.cashier-mode .btn-add-new {
+body.cashier-mode .btn-add-new,
+body.cashier-mode .btn_printer {
   display: none !important;
 }
 
