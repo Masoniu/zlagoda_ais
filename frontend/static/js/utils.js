@@ -44,7 +44,7 @@ function renderStoreProducts(data) {
             <tr>
                 <td class="ps-4 text-muted small">#${sp.upc}</td>
                 <td class="fw-semibold">${productName}</td>
-                <td>${sp.selling_price.toFixed(2)}</td>
+                <td>${sp.selling_price.toFixed(2)} грн</td>
                 <td>${sp.products_number} шт.</td>
                 <td>${promoBadge}</td>
                 <td class="text-end pe-4 cashier-hide-col">
@@ -65,8 +65,8 @@ function renderChecks(data) {
                 <td class="ps-4">#${chk.check_number}</td>
                 <td class="fw-semibold">${cashierName}</td>
                 <td class="text-muted small">${chk.print_date}</td>
-                <td>${chk.sum_total.toFixed(2)}</td>
-                <td class="text-muted">${chk.vat.toFixed(2)}</td>
+                <td>${chk.sum_total.toFixed(2)} грн</td>
+                <td class="text-muted">${chk.vat.toFixed(2)} грн</td>
                 <td class="text-end pe-4">
                     <button class="btn btn-sm p-1 me-2" onclick="viewCheckDetails('${chk.check_number}')" title="Деталі чека">
                         <i class="bi bi-receipt icon-zlagoda fs-5"></i>
@@ -131,7 +131,7 @@ function renderPosTable() {
                 <div class="fw-bold">${item.name}</div>
                 <div class="text-muted small">UPC: ${item.upc}</div>
             </td>
-            <td>${item.price.toFixed(2)}</td>
+            <td>${item.price.toFixed(2)} грн</td>
             <td class="text-center">
                 <div class="d-flex border rounded-2 mx-auto" style="border-color: var(--text-color) !important; width: fit-content; overflow: hidden;">
                     <button type="button" class="btn btn-sm btn-qty-pos border-0 rounded-0 px-2" onclick="changeQty(${index}, -1)">-</button>
@@ -142,7 +142,7 @@ function renderPosTable() {
                     <button type="button" class="btn btn-sm btn-qty-pos border-0 rounded-0 px-2" onclick="changeQty(${index}, 1)">+</button>
                 </div>
             </td>
-            <td class="fw-bold">${(item.price * item.quantity).toFixed(2)}</td>
+            <td class="fw-bold">${(item.price * item.quantity).toFixed(2)} грн</td>
             <td class="text-end pe-4">
                 <button type="button" class="btn btn-delete-pos p-0 fs-5" onclick="removeFromReceipt(${index})">
                     <i class="bi bi-trash"></i>
