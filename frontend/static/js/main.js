@@ -184,6 +184,8 @@ function setupEmployeeForm() {
             street: document.getElementById('emplStreetInput').value.trim(),
             zip_code: document.getElementById('emplZipInput').value.trim()
         };
+        const passVal = document.getElementById('emplPasswordInput').value;
+        if (passVal) data.password = passVal;
         submitBtn.disabled = true;
         let res;
         if (editId) {

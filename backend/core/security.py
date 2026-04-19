@@ -1,8 +1,14 @@
+import os
 import bcrypt
 from jose import jwt
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 
-SECRET_KEY = "super-secret-key-zlagoda"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("Помилка: Змінна середовища SECRET_KEY не встановлена!")
 ALGORITHM = "HS256"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

@@ -94,6 +94,11 @@ async def update_employee(
 
     provided_fields = emp_data.model_dump(exclude_unset=True)
 
+    if 'password' in provided_fields:
+        raw_password = provided_fields.pop('password')
+        if raw_password:
+            provided_fields['password_hash'] = get_password_hash(raw_password)
+
     if not provided_fields:
         raise HTTPException(status_code=400, detail="Не надано жодних полів для оновлення")
 
