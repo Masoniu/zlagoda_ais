@@ -159,10 +159,6 @@ function setupEmployeeForm() {
         e.preventDefault();
         const editId = document.getElementById('editEmployeeId').value;
         const submitBtn = form.querySelector('button[type="submit"]');
-        if (!editId && !document.getElementById('emplIdInput').value.trim()) {
-            showBeautifulAlert('Будь ласка, введіть ID працівника', 'warning');
-            return;
-        }
         if (!document.getElementById('emplSurnameInput').value.trim()) {
             showBeautifulAlert('Будь ласка, введіть прізвище', 'warning');
             return;
@@ -193,15 +189,7 @@ function setupEmployeeForm() {
         if (editId) {
             res = await apiMutate(`/employees/${editId}`, 'PUT', data);
         } else {
-            const newId = document.getElementById('emplIdInput').value.trim();
-            const password = document.getElementById('emplPasswordInput').value;
-            if (!newId || !password) {
-                showBeautifulAlert('Будь ласка, заповніть всі обов\'язкові поля', 'warning');
-                submitBtn.disabled = false;
-                return;
-            }
-            data.id_employee = newId;
-            data.password = password;
+            data.password = document.getElementById('emplPasswordInput').value;
             res = await apiMutate('/employees/', 'POST', data);
         }
         submitBtn.disabled = false;
