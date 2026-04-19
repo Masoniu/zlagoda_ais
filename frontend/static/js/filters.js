@@ -81,7 +81,10 @@ window.loadChecks = async (query = '') => {
         check_number: c.check_number, id_employee: c.id_employee, card_number: c.card_number,
         print_date: new Date(c.print_date).toLocaleString('uk-UA'), sum_total: parseFloat(c.sum_total), vat: parseFloat(c.vat), cashier_name: c.cashier_name
     }));
-    if (document.getElementById('checkTableBody')) renderChecks(mockChecks);
+    if (document.getElementById('checkTableBody')) {
+        renderChecks(mockChecks);
+        await fetchAndDisplayTotalSum();
+    }
 };
 
 window.handleSort = (entity, column = null) => {
