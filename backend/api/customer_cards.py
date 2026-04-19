@@ -151,3 +151,23 @@ async def delete_card(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Неможливо видалити цю картку, оскільки клієнт вже здійснював покупки (картка прив'язана до чеків)."
         )
+
+@router.get("/reports/all-promo")
+async def get_top_promo_customers(
+    conn: asyncpg.Connection = Depends(get_db_conn),
+    current_user: dict = Depends(get_current_user)
+):
+    query = """
+        SELECT cc.*
+        FROM customer_card cc
+        WHERE NOT EXISTS (
+            SELECT sp.upc FROM store_product sp WHERE sp.promotional_product = TRUE
+            AND NOT EXISTS (
+                SELECT s.upc FROM sale s
+                JOIN "check" ch ON s.check_number = ch.check_number
+                WHERE ch.card_number = cc.card_number AND s.upc = sp.upc
+            )
+        )
+    """
+    rows = await conn.fetch(query)
+    return [dict(r) for r in rows]

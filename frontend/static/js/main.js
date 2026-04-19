@@ -775,4 +775,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
     document.body.classList.add('loaded');
+    if(typeof flatpickr !== 'undefined') {
+        flatpickr("#reportStartDate, #reportEndDate", { enableTime: true, dateFormat: "Y-m-d H:i", time_24hr: true, locale: "uk" });
+    }
+    const btnCatReport = document.getElementById('btnGenerateCatReport');
+    if (btnCatReport) {
+        btnCatReport.addEventListener('click', async () => {
+            const start = document.getElementById('reportStartDate').value;
+            const end = document.getElementById('reportEndDate').value;
+            if(!start || !end) return showBeautifulAlert('Оберіть обидві дати', 'warning');
+
+            const data = await apiFetch(`/checks/reports/category-revenue?start_date=${start}:00&end_date=${end}:00`);
+
+            if(data.length === 0) {
+                document.getElementById('catReportBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted">За цей період продажів не знайдено</td></tr>';
+                return;
+            }
+
+            document.getElementById('catReportBody').innerHTML = data.map(r => `
+                <tr>
+                    <td class="fw-semibold">${r.category_name}</td>
+                    <td>${r.total_sold} шт.</td>
+                    <td class="text-end fw-bold text-success">${parseFloat(r.total_revenue).toFixed(2)} грн</td>
+                </tr>
+            `).join('');
+        });
+    }
+    const btnTopPromo = document.getElementById('btnTopPromoCustomers');
+    if (btnTopPromo) {
+        btnTopPromo.addEventListener('click', async () => {
+            btnTopPromo.disabled = true;
+            const data = await apiFetch('/customer-cards/reports/all-promo');
+            btnTopPromo.disabled = false;
+
+            if(data.length === 0) {
+                showBeautifulAlert('Немає клієнтів, які купили всі акційні товари', 'warning');
+                return;
+            }
+
+            const mappedData = data.map(c => ({
+                card_number: c.card_number, surname: c.cust_surname, name: c.cust_name, patronymic: c.cust_patronymic,
+                phone: c.phone_number, city: c.city, street: c.street, zip: c.zip_code, percent: c.percent
+            }));
+
+            renderCustomers(mappedData);
+            showBeautifulAlert('Фільтр застосовано: клієнти, що купили всі акції', 'success');
+        });
+    }
 });
