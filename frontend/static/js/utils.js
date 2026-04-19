@@ -86,7 +86,7 @@ function renderEmployees(data) {
             <td class="fw-semibold">${empl.surname} ${empl.name[0]}. ${empl.patronymic ? empl.patronymic[0] + '.' : ''}</td>
             <td><span class="badge-empl ${empl.role === 'Менеджер' ? 'badge-manager' : 'badge-cashier'}">${empl.role}</span></td>
             <td class="text-muted">${empl.phone}</td>
-            <td>${empl.salary} грн</td>
+            <td>${parseFloat(empl.salary).toFixed(2)} грн</td>
             <td class="text-end pe-4">
                 <button class="btn btn-sm p-1 me-2" onclick="viewEmployeeDetails('${empl.id}')" title="Детальна інформація">
                     <i class="bi bi-info-circle icon-zlagoda fs-5"></i>
