@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res = await fetch('../shared/modals.html');
             modalsPlaceholder.innerHTML = await res.text();
             if (typeof flatpickr !== 'undefined') {
-                flatpickr("#filterCheckStart, #filterCheckEnd", {
+                flatpickr("#filterCheckStart, #filterCheckEnd, #analyticsStartDate, #analyticsEndDate", {
                     enableTime: true,
                     dateFormat: "Y-m-dTH:i",
                     altInput: true,

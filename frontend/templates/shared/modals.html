@@ -364,3 +364,55 @@
     </div>
   </div>
 </div>
+
+<!-- PRODUCT ANALYTICS MODAL -->
+<div class="modal fade" id="productAnalyticsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-0 bg-light rounded-top-4">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-graph-up me-2 icon-zlagoda"></i>Аналітика продажів
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-4">
+          <p class="small text-muted mb-1">Товар:</p>
+          <p id="analyticsProductName" class="fw-bold fs-5"></p>
+          <p id="analyticsUpcText" class="small text-muted mb-0"></p>
+          <input type="hidden" id="analyticsUpc">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label small fw-bold mb-3">Період</label>
+          <div class="d-flex gap-2">
+            <div class="flex-fill">
+              <label class="form-label small text-muted">З</label>
+              <input type="date" class="form-control auth-input" id="analyticsStartDate">
+            </div>
+            <div class="flex-fill">
+              <label class="form-label small text-muted">По</label>
+              <input type="date" class="form-control auth-input" id="analyticsEndDate">
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold mb-2">Результат</label>
+          <div class="alert alert-info mb-0" role="alert">
+            <div class="text-center">
+              <p class="small text-muted mb-2">Продано товарів:</p>
+              <h2 class="fw-bold text-primary mb-2" id="analyticsResult">0</h2>
+              <p class="small text-muted mb-0">шт.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-top pt-3">
+        <button type="button" class="btn btn-light me-2 fw-bold" data-bs-dismiss="modal">Закрити</button>
+        <button type="button" class="btn btn-primary px-4 py-2 fw-bold" onclick="calculateProductSales()">Розрахувати</button>
+      </div>
+    </div>
+  </div>
+</div>
+

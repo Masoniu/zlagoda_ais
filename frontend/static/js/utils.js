@@ -6,8 +6,12 @@ function renderCategories(data) {
             <td class="ps-4 text-muted">#${cat.category_number}</td>
             <td class="fw-semibold">${cat.category_name}</td>
             <td class="text-end pe-4">
-                <button class="btn btn-sm btn_edit me-2">Редагувати</button>
-                <button class="btn btn-sm btn_delete">Видалити</button>
+                <button class="btn btn-sm btn_edit me-2" title="Редагувати">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn_delete" title="Видалити">
+                    <i class="bi bi-trash"></i>
+                </button>
             </td>
         </tr>`).join('');
 }
@@ -25,8 +29,12 @@ function renderProducts(data) {
                 <td class="text-muted small">${prod.chars}</td>
                 <td><span class="badge bg-light text-dark border p-2 fs-6 fw-normal">${catName}</span></td>
                 <td class="text-end pe-4 cashier-hide-col">
-                    <button class="btn btn-sm btn_edit me-2">Редагувати</button>
-                    <button class="btn btn-sm btn_delete">Видалити</button>
+                    <button class="btn btn-sm btn_edit me-2" title="Редагувати">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn_delete" title="Видалити">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </td>
             </tr>`;
     }).join('');
@@ -48,8 +56,15 @@ function renderStoreProducts(data) {
                 <td>${sp.products_number} шт.</td>
                 <td>${promoBadge}</td>
                 <td class="text-end pe-4 cashier-hide-col">
-                    <button class="btn btn-sm btn_edit me-2" onclick="prepareEditStoreProduct('${sp.upc}')">Редагувати</button>
-                    <button class="btn btn-sm btn_delete" onclick="deleteStoreProduct('${sp.upc}')">Видалити</button>
+                    <button class="btn btn-sm p-1 me-2" onclick="openProductAnalytics('${sp.upc}', '${productName}')" title="Аналітика продажів">
+                        <i class="bi bi-graph-up icon-zlagoda fs-5"></i>
+                    </button>
+                    <button class="btn btn-sm btn_edit me-2" onclick="prepareEditStoreProduct('${sp.upc}')" title="Редагувати">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn_delete" onclick="deleteStoreProduct('${sp.upc}')" title="Видалити">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </td>
             </tr>`;
     }).join('');
@@ -71,7 +86,9 @@ function renderChecks(data) {
                     <button class="btn btn-sm p-1 me-2" onclick="viewCheckDetails('${chk.check_number}')" title="Деталі чека">
                         <i class="bi bi-receipt icon-zlagoda fs-5"></i>
                     </button>
-                    <button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')">Видалити</button>
+                    <button class="btn btn-sm btn_delete" onclick="deleteCheck('${chk.check_number}')" title="Видалити">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </td>
             </tr>`;
     }).join('');
@@ -91,8 +108,12 @@ function renderEmployees(data) {
                 <button class="btn btn-sm p-1 me-2" onclick="viewEmployeeDetails('${empl.id}')" title="Детальна інформація">
                     <i class="bi bi-info-circle icon-zlagoda fs-5"></i>
                 </button>
-                <button class="btn btn-sm btn_edit me-2" onclick="prepareEditEmployee('${empl.id}')">Редагувати</button>
-                <button class="btn btn-sm btn_delete" onclick="deleteEmployee('${empl.id}')">Видалити</button>
+                <button class="btn btn-sm btn_edit me-2" onclick="prepareEditEmployee('${empl.id}')" title="Редагувати">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn_delete" onclick="deleteEmployee('${empl.id}')" title="Видалити">
+                    <i class="bi bi-trash"></i>
+                </button>
             </td>
         </tr>`).join('');
 }
@@ -110,8 +131,12 @@ function renderCustomers(data) {
                 <button class="btn btn-sm p-1 me-2" onclick="viewCustomerDetails('${cust.card_number}')" title="Детальна інформація">
                     <i class="bi bi-info-circle icon-zlagoda fs-5"></i>
                 </button>
-                <button class="btn btn-sm btn_edit me-2" onclick="prepareEditCustomer('${cust.card_number}')">Редагувати</button>
-                <button class="btn btn-sm btn_delete" onclick="deleteCustomer('${cust.card_number}')">Видалити</button>
+                <button class="btn btn-sm btn_edit me-2" onclick="prepareEditCustomer('${cust.card_number}')" title="Редагувати">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn_delete" onclick="deleteCustomer('${cust.card_number}')" title="Видалити">
+                    <i class="bi bi-trash"></i>
+                </button>
             </td>
         </tr>`).join('');
 }
@@ -342,3 +367,62 @@ function showBeautifulAlert(message, type = 'danger') {
         toastElement.remove();
     });
 }
+
+window.openProductAnalytics = (upc, productName) => {
+    document.getElementById('analyticsUpc').value = upc;
+    document.getElementById('analyticsUpcText').textContent = `UPC: ${upc}`;
+    document.getElementById('analyticsProductName').textContent = productName;
+    document.getElementById('analyticsStartDate').value = '';
+    document.getElementById('analyticsEndDate').value = '';
+    document.getElementById('analyticsResult').textContent = '0';
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('productAnalyticsModal')).show();
+};
+
+window.calculateProductSales = async () => {
+    const upc = document.getElementById('analyticsUpc').value;
+    const startDate = document.getElementById('analyticsStartDate').value;
+    const endDate = document.getElementById('analyticsEndDate').value;
+    const resultElement = document.getElementById('analyticsResult');
+
+    if (!upc) {
+        showBeautifulAlert('UPC товару не знайдено', 'danger');
+        return;
+    }
+
+    let url = `/checks/analytics/total-quantity/${upc}`;
+    const params = [];
+
+    if (startDate) params.push(`start_date=${startDate}:00Z`);
+    if (endDate) params.push(`end_date=${endDate}:00Z`);
+
+    if (params.length > 0) url += '?' + params.join('&');
+
+    try {
+        const originalText = resultElement.textContent;
+        resultElement.textContent = 'Розрахунок...';
+        resultElement.style.color = 'var(--text-color)';
+
+        const response = await apiFetch(url);
+
+        if (response && response.total_sold !== undefined) {
+            resultElement.textContent = response.total_sold;
+            resultElement.style.color = 'var(--primary-color)';
+            resultElement.parentElement.classList.add('border-success', 'border-2');
+
+            // Прибираємо бордюр через 3 сек
+            setTimeout(() => {
+                resultElement.parentElement.classList.remove('border-success', 'border-2');
+            }, 3000);
+        } else {
+            showBeautifulAlert('Помилка отримання даних. Перевірте підключення.', 'danger');
+            resultElement.textContent = '0';
+            resultElement.style.color = 'var(--text-color)';
+        }
+    } catch (error) {
+        showBeautifulAlert('Помилка сервера під час підрахунку.', 'danger');
+        resultElement.textContent = '0';
+        resultElement.style.color = 'var(--text-color)';
+        console.error('Analytics error:', error);
+    }
+};
