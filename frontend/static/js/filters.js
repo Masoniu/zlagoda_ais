@@ -31,11 +31,17 @@ window.loadProducts = async (query = '') => {
 };
 
 window.loadStoreProducts = async (query = '') => {
-    let url = `/store-products/?sort_by=${currentSort.storeProducts.by}&sort_order=${currentSort.storeProducts.order}`;
-    if (query) url += `&upc=${encodeURIComponent(query)}`;
-    const dbStoreProducts = await apiFetch(url);
+    const params = new URLSearchParams();
+    params.append('sort_by', currentSort.storeProducts.by);
+    params.append('sort_order', currentSort.storeProducts.order);
+    if (query) params.append('upc', query);
+    const promoFilter = savedFilters['store-products'].promo;
+    if (promoFilter !== 'all') {
+        params.append('promotional', promoFilter === 'yes' ? 'true' : 'false');
+    }
+    const dbStoreProducts = await apiFetch(`/store-products/?${params.toString()}`);
     mockStoreProducts = dbStoreProducts.map(sp => ({
-        upc: sp.UPC,
+        upc: sp.upc || sp.UPC,
         id_product: sp.id_product,
         selling_price: parseFloat(sp.selling_price),
         products_number: sp.products_number,
@@ -151,17 +157,8 @@ window.applyFilters = async () => {
         } else if (pageType === 'store-products') {
             const promoVal = document.getElementById('filterPromoSelect').value;
             savedFilters['store-products'].promo = promoVal;
-            endpoint = `/store-products/?sort_by=name`;
-            if (promoVal !== 'all') {
-                endpoint += `&promotional=${promoVal === 'yes' ? 'true' : 'false'}`;
-            }
-            const dbStoreProducts = await apiFetch(endpoint);
-            mockStoreProducts = dbStoreProducts.map(sp => ({
-                upc: sp.upc || sp.UPC, id_product: sp.id_product, selling_price: parseFloat(sp.selling_price),
-                products_number: sp.products_number, promotional_product: sp.promotional_product,
-                product_name: sp.product_name
-            }));
-            renderStoreProducts(mockStoreProducts);
+            const currentSearch = document.getElementById('storeProductSearch')?.value.trim() || '';
+            await loadStoreProducts(currentSearch);
         } else if (pageType === 'checks') {
             const cashierVal = document.getElementById('filterCheckCashier').value;
             const startVal = document.getElementById('filterCheckStart').value;
