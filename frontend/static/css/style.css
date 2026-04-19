@@ -560,3 +560,17 @@ body.cashier-mode .cashier-hide-col {
 .btn_star:hover {
   transform: scale(1.15);
 }
+
+.analytics_btn {
+  background: transparent !important;
+  color: var(--text-color) !important;
+  border: none !important;
+  font-size: 1.5rem;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.analytics_btn:hover {
+  transform: scale(1.15);
+}
