@@ -20,7 +20,7 @@ async def get_all_cards(
 ):
     if sort_order.lower() not in ["asc", "desc"]:
         sort_order = "asc"
-    
+
     query = "SELECT * FROM customer_card WHERE 1=1"
     args = []
     if percent is not None:
@@ -36,6 +36,7 @@ async def get_all_cards(
     result = await conn.fetch(query, *args)
     return [dict(r) for r in result]
 
+
 @router.post("/", response_model=CustomerCardResponse, status_code=status.HTTP_201_CREATED)
 async def create_card(
         card: CustomerCardCreate,
@@ -46,19 +47,23 @@ async def create_card(
         raise HTTPException(status_code=403, detail="Додавати картки можуть лише Менеджер або Касир")
 
     try:
+        next_val = await conn.fetchval('SELECT COALESCE(MAX(CAST(card_number AS BIGINT)), 0) + 1 FROM customer_card')
+        new_card_number = str(next_val).zfill(13)
+
         new_card = await conn.fetchrow("""
-            INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic,
-                                       phone_number, city, street, zip_code, percent)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
-        """, card.card_number, card.cust_surname, card.cust_name, card.cust_patronymic,
-            card.phone_number, card.city, card.street, card.zip_code, card.percent)
+                                       INSERT INTO customer_card (card_number, cust_surname, cust_name, cust_patronymic,
+                                                                  phone_number, city, street, zip_code, percent)
+                                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
+                                       """, new_card_number, card.cust_surname, card.cust_name, card.cust_patronymic,
+                                       card.phone_number, card.city, card.street, card.zip_code, card.percent)
 
         return dict(new_card)
     except asyncpg.exceptions.UniqueViolationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Картка з таким номером вже існує"
+            detail="Помилка: Картка з таким номером або телефоном уже існує"
         )
+
 
 @router.put("/{card_number}", response_model=CustomerCardResponse)
 async def update_card(
@@ -71,52 +76,21 @@ async def update_card(
         raise HTTPException(status_code=403, detail="Оновлювати картки можуть лише Менеджер або Касир")
 
     provided_fields = card_data.model_dump(exclude_unset=True)
-    
+
     if not provided_fields:
         raise HTTPException(status_code=400, detail="Не надано жодних полів для оновлення")
-    
+
     try:
         update_fields = []
         update_values = []
-        
-        if 'cust_surname' in provided_fields:
-            update_fields.append(f"cust_surname = ${len(update_values) + 1}")
-            update_values.append(card_data.cust_surname)
-        
-        if 'cust_name' in provided_fields:
-            update_fields.append(f"cust_name = ${len(update_values) + 1}")
-            update_values.append(card_data.cust_name)
-        
-        if 'cust_patronymic' in provided_fields:
-            update_fields.append(f"cust_patronymic = ${len(update_values) + 1}")
-            update_values.append(card_data.cust_patronymic)
-        
-        if 'phone_number' in provided_fields:
-            update_fields.append(f"phone_number = ${len(update_values) + 1}")
-            update_values.append(card_data.phone_number)
-        
-        if 'city' in provided_fields:
-            update_fields.append(f"city = ${len(update_values) + 1}")
-            update_values.append(card_data.city)
-        
-        if 'street' in provided_fields:
-            update_fields.append(f"street = ${len(update_values) + 1}")
-            update_values.append(card_data.street)
-        
-        if 'zip_code' in provided_fields:
-            update_fields.append(f"zip_code = ${len(update_values) + 1}")
-            update_values.append(card_data.zip_code)
-        
-        if 'percent' in provided_fields:
-            # Validate percent is in valid range (schema enforces this, but explicit check for clarity)
-            if not (0 <= card_data.percent <= 100):
-                raise HTTPException(status_code=400, detail="Відсоток знижки повинен бути від 0 до 100")
-            update_fields.append(f"percent = ${len(update_values) + 1}")
-            update_values.append(card_data.percent)
-        
+
+        for field, value in provided_fields.items():
+            update_values.append(value)
+            update_fields.append(f"{field} = ${len(update_values)}")
+
         update_values.append(card_number)
         query = f"UPDATE customer_card SET {', '.join(update_fields)} WHERE card_number = ${len(update_values)} RETURNING *"
-        
+
         updated_card = await conn.fetchrow(query, *update_values)
 
         if not updated_card:
@@ -126,8 +100,9 @@ async def update_card(
     except asyncpg.exceptions.UniqueViolationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Картка з таким номером або телефоном уже існує"
+            detail="Помилка: Такий телефон уже використовується іншим клієнтом"
         )
+
 
 @router.delete("/{card_number}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_card(

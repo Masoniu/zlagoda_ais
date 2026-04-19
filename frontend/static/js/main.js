@@ -210,51 +210,36 @@ function setupCustomerForm() {
         e.preventDefault();
         const editId = document.getElementById('editCustomerCardNumber').value;
         const submitBtn = form.querySelector('button[type="submit"]');
-        const cardNumber = editId || document.getElementById('custCardNumberInput').value.trim();
         const surname = document.getElementById('custSurnameInput').value.trim();
         const name = document.getElementById('custNameInput').value.trim();
         const phone = document.getElementById('custPhoneInput').value.trim();
         const percent = document.getElementById('custPercentInput').value;
-        if (!cardNumber) {
-            showBeautifulAlert('Будь ласка, введіть номер картки', 'warning');
-            return;
-        }
-        if (!surname) {
-            showBeautifulAlert('Будь ласка, введіть прізвище', 'warning');
-            return;
-        }
-        if (!name) {
-            showBeautifulAlert('Будь ласка, введіть ім\'я', 'warning');
-            return;
-        }
-        if (!phone) {
-            showBeautifulAlert('Будь ласка, введіть номер телефону', 'warning');
-            return;
-        }
-        if (isNaN(percent) || percent < 0 || percent > 100) {
-            showBeautifulAlert('Відсоток знижки повинен бути від 0 до 100', 'warning');
+        if (!surname || !name || !phone) {
+            showBeautifulAlert('Будь ласка, заповніть обов\'язкові поля (Прізвище, Ім\'я, Телефон)', 'warning');
             return;
         }
         const data = {
-            card_number: cardNumber,
             cust_surname: surname,
             cust_name: name,
             cust_patronymic: document.getElementById('custPatronymicInput').value.trim(),
             phone_number: phone,
-            percent: parseInt(percent),
+            percent: parseInt(percent) || 0,
             city: document.getElementById('custCityInput').value.trim(),
             street: document.getElementById('custStreetInput').value.trim(),
             zip_code: document.getElementById('custZipInput').value.trim()
         };
         submitBtn.disabled = true;
-        const res = editId
-            ? await apiMutate(`/customer-cards/${editId}`, 'PUT', data)
-            : await apiMutate('/customer-cards/', 'POST', data);
+        let res;
+        if (editId) {
+            res = await apiMutate(`/customer-cards/${editId}`, 'PUT', data);
+        } else {
+            res = await apiMutate('/customer-cards/', 'POST', data);
+        }
         submitBtn.disabled = false;
         if (res.success) {
             await loadRealDataFromDB();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addCustomerModal')).hide();
-            showBeautifulAlert('Успішно збережено!', 'success');
+            showBeautifulAlert('Дані клієнта успішно збережено!', 'success');
         }
     });
 }
