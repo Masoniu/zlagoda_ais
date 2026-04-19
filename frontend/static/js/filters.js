@@ -6,9 +6,20 @@ window.loadCategories = async (query = '') => {
 };
 
 window.loadProducts = async (query = '') => {
-    let url = `/products/?sort_order=${currentSort.products.order}`;
-    if (query) url += `&name=${encodeURIComponent(query)}`;
-    const dbProducts = await apiFetch(url);
+    if (savedFilters.products.categories !== null && savedFilters.products.categories.length === 0) {
+        mockProducts = [];
+        if (document.getElementById('productTableBody')) {
+            renderProducts(mockProducts);
+        }
+        return;
+    }
+    const params = new URLSearchParams();
+    params.append('sort_order', currentSort.products.order);
+    if (query) params.append('name', query);
+    if (savedFilters.products.categories !== null) {
+        savedFilters.products.categories.forEach(id => params.append('category_number', id));
+    }
+    const dbProducts = await apiFetch(`/products/?${params.toString()}`);
     mockProducts = dbProducts.map(p => ({
         id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
         chars: p.characteristics, category_id: p.category_number, category_name: p.category_name
@@ -112,22 +123,8 @@ window.applyFilters = async () => {
         if (pageType === 'products') {
             const checkedCats = Array.from(document.querySelectorAll('#filterCategoryList input:checked')).map(cb => cb.value);
             savedFilters['products'].categories = checkedCats;
-            if (checkedCats.length === 0) {
-                mockProducts = [];
-                renderProducts(mockProducts);
-                bootstrap.Modal.getOrCreateInstance(document.getElementById('filterModal')).hide();
-                return;
-            }
-            const params = new URLSearchParams();
-            checkedCats.forEach(id => params.append('category_number', id));
-            endpoint = `/products/${params.toString() ? '?' + params.toString() : ''}`;
-            const dbProducts = await apiFetch(endpoint);
-            mockProducts = dbProducts.map(p => ({
-                id: p.id_product, name: p.product_name, manufacturer: p.manufacturer,
-                chars: p.characteristics, category_id: p.category_number,
-                category_name: p.category_name
-            }));
-            renderProducts(mockProducts);
+            const currentSearch = document.getElementById('productSearch')?.value.trim() || '';
+            await loadProducts(currentSearch);
         } else if (pageType === 'customers') {
             const percentVal = document.getElementById('filterPercent').value;
             savedFilters['customers'].percent = percentVal;
