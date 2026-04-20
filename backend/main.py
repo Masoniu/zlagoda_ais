@@ -16,7 +16,6 @@ async def cleanup_old_checks(pool):
     while True:
         try:
             async with pool.acquire() as conn:
-                #видалення чеків через 3 роки
                 result = await conn.execute('''
                                             DELETE
                                             FROM "check"
@@ -26,7 +25,6 @@ async def cleanup_old_checks(pool):
         except Exception as e:
             print(f"Помилка очищення чеків: {e}")
 
-        # Очікування 24 години (86400 секунд)
         await asyncio.sleep(86400)
 
 

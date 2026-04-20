@@ -23,7 +23,6 @@ async def init_db():
                 DROP TABLE IF EXISTS category CASCADE;
             """)
 
-            # 1. Категорія
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS category (
                     category_number SERIAL PRIMARY KEY,
@@ -31,7 +30,6 @@ async def init_db():
                 );
             """)
 
-            # 2. Працівник
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS employee (
                     id_employee VARCHAR(10) PRIMARY KEY,
@@ -51,7 +49,6 @@ async def init_db():
                 );
             """)
 
-            # 3. Карта клієнта
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS customer_card (
                     card_number VARCHAR(13) PRIMARY KEY,
@@ -66,7 +63,6 @@ async def init_db():
                 );
             """)
 
-            # 4. Товар (Каталог)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS product (
                     id_product SERIAL PRIMARY KEY,
@@ -77,7 +73,6 @@ async def init_db():
                 );
             """)
 
-            # 5. store_product
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS store_product (
                     upc VARCHAR(12) PRIMARY KEY,
@@ -89,7 +84,6 @@ async def init_db():
                 );
             """)
 
-            # 6. Чек
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS "check" (
                     check_number VARCHAR(10) PRIMARY KEY,
@@ -101,7 +95,6 @@ async def init_db():
                 );
             """)
 
-            # 7. Продажі (sale)
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS sale (
                     upc VARCHAR(12) NOT NULL REFERENCES store_product(upc) ON DELETE NO ACTION ON UPDATE CASCADE,
@@ -112,7 +105,6 @@ async def init_db():
                 );
             """)
 
-            # Індекси для швидкого пошуку
             await conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_employee_surname ON employee(empl_surname);
                 CREATE INDEX IF NOT EXISTS idx_product_name ON product(product_name);
@@ -120,7 +112,6 @@ async def init_db():
                 CREATE INDEX IF NOT EXISTS idx_customer_surname ON customer_card(cust_surname);
             """)
 
-            # Представлення (View) - ВИПРАВЛЕНО UPC на upc
             await conn.execute("""
                 CREATE OR REPLACE VIEW view_store_inventory AS
                 SELECT sp.upc,
@@ -135,7 +126,6 @@ async def init_db():
                 JOIN category c ON p.category_number = c.category_number;
             """)
 
-            # Тригер - ВИПРАВЛЕНО UPC на upc
             await conn.execute("""
                 CREATE OR REPLACE FUNCTION deduct_inventory()
                 RETURNS TRIGGER AS $$
