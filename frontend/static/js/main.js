@@ -856,14 +856,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnBestsellers.addEventListener('click', async () => {
             try {
                 const dbProducts = await apiFetch('/products/reports/bestsellers');
-
                 if(dbProducts.length === 0) {
                     return showBeautifulAlert('Немає товарів, які продавав абсолютно кожен касир', 'warning');
                 }
-
-                renderProducts(dbProducts);
+                const mapped = dbProducts.map(p => ({
+                    id: p.id_product, 
+                    name: p.product_name, 
+                    manufacturer: p.manufacturer,
+                    chars: p.characteristics, 
+                    category_id: p.category_number, 
+                    category_name: p.category_name
+                }));
+                renderProducts(mapped);
                 showBeautifulAlert('Показано абсолютні бестселери!', 'success');
-
+                
             } catch (error) {
                 console.error("Помилка завантаження бестселерів:", error);
             }
