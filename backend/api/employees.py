@@ -174,6 +174,7 @@ async def get_cashier_performance(
         WHERE e.empl_role = 'Касир'
         GROUP BY e.id_employee, e.empl_surname, e.empl_name
         ORDER BY total_revenue DESC;
+            LIMIT 5;
     """
     rows = await conn.fetch(query)
     return [dict(r) for r in rows]
@@ -204,6 +205,7 @@ async def get_cashiers_by_brand(
                       AND sp.id_product = p.id_product
                 )
           )
+            LIMIT 5;
     """
     rows = await conn.fetch(query, brand)
     return [dict(r) for r in rows]
