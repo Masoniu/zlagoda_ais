@@ -18,7 +18,6 @@ async def calculate_promo_price(conn: asyncpg.Connection, upc_prom: str) -> Deci
     return round(Decimal(str(reg_price)) * Decimal('0.8'), 4)
 
 
-# Видалено unused variable, винесено в dependencies
 @router.get("/", response_model=List[StoreProductResponse], dependencies=[Depends(get_current_user)])
 async def get_all_store_products(
         search: Optional[str] = Query(None, description="Пошук за UPC"),
@@ -59,7 +58,6 @@ async def get_all_store_products(
     return [dict(r) for r in result]
 
 
-# Видалено unused variable, винесено в dependencies
 @router.get("/{upc}", dependencies=[Depends(get_current_user)])
 async def get_store_product_details(
         upc: str,

@@ -8,7 +8,6 @@ from backend.api.dep import get_current_user
 router = APIRouter()
 
 
-# Тут current_user передаємо в dependencies, бо всередині він не використовується
 @router.get("/", response_model=List[ProductResponse], dependencies=[Depends(get_current_user)])
 async def get_products(
         category_number: List[int] = Query(default=[], description="Фільтр за категорією"),
@@ -56,14 +55,12 @@ async def create_product(
         raise HTTPException(status_code=400, detail="Категорія не знайдена")
 
     try:
-        # Спочатку вставляємо і отримуємо ID
         new_product_id = await conn.fetchval("""
             INSERT INTO product (category_number, product_name, manufacturer, characteristics)
             VALUES ($1, $2, $3, $4) RETURNING id_product
         """, product.category_number, product.product_name,
                                              getattr(product, 'manufacturer', 'Невідомо'), product.characteristics)
 
-        # Потім дістаємо повний об'єкт із category_name для відповіді API
         new_product = await conn.fetchrow("""
             SELECT p.id_product, p.category_number, p.product_name, 
                    p.manufacturer, p.characteristics, c.category_name 
@@ -124,7 +121,6 @@ async def update_product(
 
         await conn.execute(query, *update_values)
 
-        # Витягуємо оновлений запис разом з category_name
         updated_product = await conn.fetchrow("""
             SELECT p.id_product, p.category_number, p.product_name, 
                    p.manufacturer, p.characteristics, c.category_name 
@@ -174,8 +170,9 @@ async def get_bestsellers(
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
     query = """
-        SELECT p.id_product, p.product_name, p.manufacturer, p.characteristics, p.category_number
+        SELECT p.id_product, p.product_name, p.manufacturer, p.characteristics, p.category_number, c.category_name
         FROM product p
+        JOIN category c ON p.category_number = c.category_number
         WHERE NOT EXISTS (
             SELECT e.id_employee FROM employee e WHERE e.empl_role = 'Касир'
             AND NOT EXISTS (
@@ -185,6 +182,7 @@ async def get_bestsellers(
                 WHERE ch.id_employee = e.id_employee AND sp.id_product = p.id_product
             )
         )
+        ORDER BY p.product_name ASC
     """
     result = await conn.fetch(query)
     return [dict(r) for r in result]
