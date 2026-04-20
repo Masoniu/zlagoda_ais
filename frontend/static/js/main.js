@@ -869,4 +869,67 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    const perfModalEl = document.getElementById('cashierPerfModal');
+    if (perfModalEl) {
+        perfModalEl.addEventListener('show.bs.modal', async () => {
+            document.getElementById('perfReportBody').innerHTML = '<tr><td colspan="3" class="text-center">Завантаження...</td></tr>';
+            try {
+                const data = await apiFetch('/employees/reports/performance');
+                document.getElementById('perfReportBody').innerHTML = data.map(r => `
+                    <tr>
+                        <td class="ps-4 fw-semibold">${r.empl_surname} ${r.empl_name[0]}.</td>
+                        <td><span class="badge bg-light text-dark border p-2 fs-6 fw-normal">${r.total_items_sold} шт.</span></td>
+                        <td class="fw-bold">${parseFloat(r.total_revenue).toFixed(2)} грн</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('perfReportBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Помилка завантаження</td></tr>';
+            }
+        });
+    }
+
+    const modalBtnBrandSearch = document.getElementById('modalBtnBrandSearch');
+    if (modalBtnBrandSearch) {
+        modalBtnBrandSearch.addEventListener('click', async () => {
+            const brand = document.getElementById('modalBrandInput').value.trim();
+            const tbody = document.getElementById('brandExpertsReportBody');
+
+            if(!brand) {
+                showBeautifulAlert('Будь ласка, введіть назву бренду', 'warning');
+                return;
+            }
+
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3"><span class="spinner-border spinner-border-sm text-success"></span> Шукаємо...</td></tr>';
+
+            try {
+                const dbEmployees = await apiFetch(`/employees/reports/sold-all-brand?brand=${encodeURIComponent(brand)}`);
+
+                if(dbEmployees.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">Жоден касир не продав усі товари бренду <b>${brand}</b></td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = dbEmployees.map(e => `
+                    <tr>
+                        <td class="text-muted small ps-3">#${e.id_employee}</td>
+                        <td class="fw-semibold">${e.empl_surname} ${e.empl_name[0]}.</td>
+                        <td>${e.phone_number}</td>
+                    </tr>
+                `).join('');
+
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-3">Помилка завантаження даних</td></tr>';
+            }
+        });
+    }
+
+    const brandExpertsModalEl = document.getElementById('brandExpertsModal');
+    if (brandExpertsModalEl) {
+        brandExpertsModalEl.addEventListener('hidden.bs.modal', () => {
+            document.getElementById('modalBrandInput').value = '';
+            document.getElementById('brandExpertsReportBody').innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">Введіть бренд для пошуку експертів</td></tr>';
+        });
+    }
 });

@@ -152,3 +152,58 @@ async def delete_employee(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Неможливо видалити цього працівника, оскільки він створював чеки. Спочатку перепризначте його чеки іншому працівнику."
         )
+
+@router.get("/reports/performance")
+async def get_cashier_performance(
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Доступ заборонено")
+
+    query = """
+        SELECT 
+            e.id_employee, 
+            e.empl_surname, 
+            e.empl_name, 
+            SUM(s.product_number) AS total_items_sold, 
+            SUM(s.product_number * s.selling_price) AS total_revenue
+        FROM employee e
+        JOIN "check" ch ON e.id_employee = ch.id_employee
+        JOIN sale s ON ch.check_number = s.check_number
+        WHERE e.empl_role = 'Касир'
+        GROUP BY e.id_employee, e.empl_surname, e.empl_name
+        ORDER BY total_revenue DESC;
+    """
+    rows = await conn.fetch(query)
+    return [dict(r) for r in rows]
+
+@router.get("/reports/sold-all-brand")
+async def get_cashiers_by_brand(
+        brand: str,
+        conn: asyncpg.Connection = Depends(get_db_conn),
+        current_user: dict = Depends(get_current_user)
+):
+    if current_user["empl_role"] != "Менеджер":
+        raise HTTPException(status_code=403, detail="Доступ заборонено")
+
+    query = """
+        SELECT e.id_employee, e.empl_surname, e.empl_name, e.phone_number, e.empl_role, e.salary, e.city, e.street, e.zip_code, e.date_of_start, e.date_of_birth
+        FROM employee e
+        WHERE e.empl_role = 'Касир' 
+          AND NOT EXISTS (
+              SELECT p.id_product 
+              FROM product p 
+              WHERE p.manufacturer = $1
+                AND NOT EXISTS (
+                    SELECT s.UPC 
+                    FROM sale s
+                    JOIN "check" ch ON s.check_number = ch.check_number
+                    JOIN store_product sp ON s.UPC = sp.UPC
+                    WHERE ch.id_employee = e.id_employee 
+                      AND sp.id_product = p.id_product
+                )
+          )
+    """
+    rows = await conn.fetch(query, brand)
+    return [dict(r) for r in rows]

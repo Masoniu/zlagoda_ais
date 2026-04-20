@@ -169,7 +169,7 @@ async def seed_data():
         checks_to_insert = []
         sales_to_insert = []
         num_checks = 500
-        base_date = datetime(2023, 10, 1, 9, 0, 0)
+        base_date = datetime(2026, 4, 14, 9, 0, 0)
 
         for i in range(1, num_checks + 1):
             check_id = str(i)

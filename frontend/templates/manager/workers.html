@@ -37,6 +37,12 @@
           >
             <i class="bi bi-funnel fs-4"></i>
           </button>
+          <button class="btn btn-sm border text-muted ms-2 px-2 py-1" style="height: 31px; width: 31px;" title="Ефективність касирів" data-bs-toggle="modal" data-bs-target="#cashierPerfModal">
+    <i class="bi bi-bar-chart fs-6"></i>
+</button>
+<button class="btn btn-sm border text-muted ms-2 px-2 py-1" style="height: 31px; width: 31px;" title="Експерти бренду" data-bs-toggle="modal" data-bs-target="#brandExpertsModal">
+    <i class="bi bi-star fs-6"></i>
+</button>
           <button
             class="btn btn-primary fw-bold px-4 py-2 shadow-sm rounded-3"
             data-bs-toggle="modal"
@@ -314,6 +320,62 @@
         </div>
       </div>
     </div>
+
+        <!--Ефективність касирів-->
+    <div class="modal fade" id="cashierPerfModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header badge-manager border-0">
+        <h5 class="modal-title fw-bold text-white">Ефективність касирів</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4 text-muted fw-normal">Касир</th>
+                    <th class="text-muted fw-normal">Продано</th>
+                    <th class="text-muted fw-normal">Виторг</th>
+                </tr>
+            </thead>
+            <tbody id="perfReportBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!--експерд брендів шота там-->
+    <div class="modal fade" id="brandExpertsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header badge-manager border-0">
+        <h5 class="modal-title fw-bold text-white">Експерти бренду</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group mb-3 shadow-sm">
+            <input type="text" id="modalBrandInput" class="form-control bg-light border-end-0" placeholder="Введіть бренд (напр. Roshen)">
+            <button class="btn btn-zlagoda text-white" id="modalBtnBrandSearch">Шукати</button>
+        </div>
+        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-muted fw-normal ps-3">ID</th>
+                        <th class="text-muted fw-normal">Касир</th>
+                        <th class="text-muted fw-normal">Телефон</th>
+                    </tr>
+                </thead>
+                <tbody id="brandExpertsReportBody">
+                    <tr><td colspan="3" class="text-center text-muted py-4">Введіть бренд для пошуку експертів</td></tr>
+                </tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div id="modals_placeholder"></div>
     <script src="../../static/js/api.js"></script>
