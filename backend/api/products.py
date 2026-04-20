@@ -174,8 +174,9 @@ async def get_bestsellers(
         conn: asyncpg.Connection = Depends(get_db_conn)
 ):
     query = """
-        SELECT p.id_product, p.product_name, p.manufacturer, p.characteristics, p.category_number
+        SELECT p.id_product, p.product_name, p.manufacturer, p.characteristics, p.category_number, c.category_name
         FROM product p
+        JOIN category c ON p.category_number = c.category_number
         WHERE NOT EXISTS (
             SELECT e.id_employee FROM employee e WHERE e.empl_role = 'Касир'
             AND NOT EXISTS (
@@ -185,6 +186,7 @@ async def get_bestsellers(
                 WHERE ch.id_employee = e.id_employee AND sp.id_product = p.id_product
             )
         )
+        ORDER BY p.product_name ASC
     """
     result = await conn.fetch(query)
     return [dict(r) for r in result]
