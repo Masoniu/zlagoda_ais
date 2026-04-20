@@ -173,8 +173,8 @@ async def get_cashier_performance(
         JOIN sale s ON ch.check_number = s.check_number
         WHERE e.empl_role = 'Касир'
         GROUP BY e.id_employee, e.empl_surname, e.empl_name
-        ORDER BY total_revenue DESC;
-            LIMIT 5;
+        ORDER BY total_revenue DESC
+        LIMIT 5;
     """
     rows = await conn.fetch(query)
     return [dict(r) for r in rows]
