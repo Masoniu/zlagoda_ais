@@ -56,76 +56,8 @@
 
 База даних спроєктована на основі реляційної моделі з високою продуктивністю завдяки прямим асинхронним SQL-запитам через `asyncpg` та пулу з'єднань:
 
-```mermaid
-erDiagram
-    CATEGORY ||--o{ PRODUCT : "contains"
-    PRODUCT ||--o{ STORE_PRODUCT : "instantiated as"
-    STORE_PRODUCT ||--o{ STORE_PRODUCT : "promotes (upc_prom)"
-    EMPLOYEE ||--o{ CHECK : "creates"
-    CUSTOMER_CARD ||--o{ CHECK : "applies discount"
-    CHECK ||--|{ SALE : "includes"
-    STORE_PRODUCT ||--o{ SALE : "sold in"
+<img width="1330" height="1931" alt="Screenshot 2026-09-01 193017" src="https://github.com/user-attachments/assets/73460124-ba3d-4a04-b5d9-bd0801e4fdbe" />
 
-    CATEGORY {
-        serial category_number PK
-        varchar category_name UK
-    }
-    PRODUCT {
-        serial id_product PK
-        int category_number FK
-        varchar product_name
-        varchar manufacturer
-        varchar characteristics
-    }
-    STORE_PRODUCT {
-        varchar upc PK
-        varchar upc_prom FK
-        int id_product FK
-        decimal selling_price
-        int products_number
-        boolean promotional_product
-    }
-    EMPLOYEE {
-        varchar id_employee PK
-        varchar password_hash
-        varchar empl_surname
-        varchar empl_name
-        varchar empl_patronymic
-        varchar empl_role
-        decimal salary
-        date date_of_birth
-        date date_of_start
-        varchar phone_number
-        varchar city
-        varchar street
-        varchar zip_code
-    }
-    CUSTOMER_CARD {
-        varchar card_number PK
-        varchar cust_surname
-        varchar cust_name
-        varchar cust_patronymic
-        varchar phone_number
-        varchar city
-        varchar street
-        varchar zip_code
-        int percent
-    }
-    CHECK {
-        varchar check_number PK
-        varchar id_employee FK
-        varchar card_number FK
-        timestamp print_date
-        decimal sum_total
-        decimal vat
-    }
-    SALE {
-        varchar upc PK,FK
-        varchar check_number PK,FK
-        int product_number
-        decimal selling_price
-    }
-```
 
 ### Ключові особливості БД:
 1. **Тригер автоматичного списання залишків (`trigger_deduct_inventory`):** після кожної вставки рядка в таблицю `sale` автоматично зменшується кількість товару `products_number` у таблиці `store_product`.
