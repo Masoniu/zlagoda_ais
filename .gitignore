@@ -37,6 +37,11 @@ desktop.ini
 # Environment / secrets
 .env
 .env.*
+!.env.example
+
+# Documents / Backups
+*.docx
+.git_backup/
 
 # Node / JavaScript
 node_modules/
